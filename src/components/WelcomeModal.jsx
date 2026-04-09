@@ -26,7 +26,7 @@ const WelcomeModal = ({ onComplete }) => {
     const visitorData = { name: name.trim(), email: email.trim(), mobile: mobile.trim(), joinedAt: new Date().toISOString() };
 
     try {
-      await fetch('http://localhost:5000/api/leads', {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(visitorData),
