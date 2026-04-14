@@ -243,20 +243,60 @@ const AIGenerators = () => {
     }, 1200);
   };
 
-  const runGenerate = (rejected = rejectedNames) => {
+  const runGenerate = async (rejected = rejectedNames) => {
     if (selectedSkills.length === 0 || selectedNiches.length === 0 || !budget) {
       alert('Please fill in Skills, Niche, and Starting Budget before generating.');
       return;
     }
+    
     setLoading(true);
     setResult(null);
     setRating(0);
-    // User requested NO scrolling down dynamically. Stays on skill section.
-    setTimeout(() => {
-      const bp = buildBlueprint(selectedSkills, selectedNiches, budget, rejected);
-      setResult(bp);
+
+    const skillsStr = selectedSkills.map(s => s.label).join(', ');
+    const nichesStr = selectedNiches.map(n => n.label).join(', ');
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'https://launchpad-bharat-backend.onrender.com';
+      const response = await fetch(`${apiBase}/api/generate-blueprint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skills: skillsStr,
+          niches: nichesStr,
+          budget: budget
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to generate blueprint');
+      }
+
+      const blueprintData = await response.json();
+      
+      // Calculate costs using our refined logic (keeping financial integrity)
+      const financialCosts = COST_TABLE(selectedNiches[0]?.label || 'E-commerce', Number(budget), skillsStr);
+      const totalCost = financialCosts.reduce((s, r) => s + r.total, 0);
+
+      const finalResult = {
+        ...blueprintData,
+        costs: financialCosts,
+        totalCost,
+        budget: Number(budget),
+        skillList: skillsStr,
+        niche: nichesStr,
+        isInsufficient: Number(budget) < totalCost,
+        isTight: Number(budget) >= totalCost && Number(budget) < (totalCost * 1.5)
+      };
+
+      setResult(finalResult);
+    } catch (err) {
+      console.error('[GENERATE] Error:', err.message);
+      alert('Error: ' + err.message);
+    } finally {
       setLoading(false);
-    }, 1800);
+    }
   };
 
   const handleLike = () => {
@@ -285,7 +325,6 @@ const AIGenerators = () => {
   // ── PDF Download ──────────────────────────────────────────────────────────
   const generatePDF = () => {
     if (!result) return;
-    if (!result) return;
     const doc = new jsPDF();
     const M = 20, W = 170;
     let y = 20;
@@ -295,239 +334,131 @@ const AIGenerators = () => {
 
     const chk = (n = 12) => { if (y + n > 275) { doc.addPage(); y = 22; } };
 
-    const hdg = (text, color = [34, 211, 238]) => {
-      chk(16); doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...color);
-      doc.text(safe(text), M, y); y += 5;
-      doc.setDrawColor(...color); doc.setLineWidth(0.3); doc.line(M, y, M + W, y); y += 6;
+    const hdg = (text, color = [139, 92, 246]) => {
+      chk(20); 
+      y += 5;
+      doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(...color);
+      doc.text(safe(text), M, y); y += 4;
+      doc.setDrawColor(...color); doc.setLineWidth(0.5); doc.line(M, y, M + W, y); y += 10;
     };
 
     const bdy = (text, size = 10, bold = false, color = [40, 40, 40]) => {
-      chk(size + 4); doc.setFontSize(size); doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      chk(size + 5); 
+      doc.setFontSize(size); doc.setFont('helvetica', bold ? 'bold' : 'normal');
       doc.setTextColor(...color);
-      doc.splitTextToSize(safe(text), W).forEach(l => { chk(size + 2); doc.text(l, M, y); y += size >= 13 ? 7 : 5.5; });
-      y += 2;
-    };
-
-    const blt = (text) => {
-      chk(12); doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
-      doc.splitTextToSize(safe('- ' + text), W - 4).forEach(l => { chk(10); doc.text(l, M + 4, y); y += 5; });
+      const lines = doc.splitTextToSize(safe(text), W);
+      lines.forEach(l => { 
+        chk(size + 2); 
+        doc.text(l, M, y); 
+        y += size >= 13 ? 8 : 6; 
+      });
+      y += 4;
     };
 
     // PAGE 1: COVER
     doc.setFillColor(12, 12, 32); doc.rect(0, 0, 210, 297, 'F');
-    doc.setFillColor(139, 92, 246); doc.rect(0, 0, 6, 297, 'F');
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
+    doc.setFillColor(34, 211, 238); doc.rect(0, 0, 6, 297, 'F');
+    
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 211, 238);
     doc.text('LAUNCHPAD BHARAT', M, 38);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 120, 160);
-    doc.text("India's Startup Blueprint Engine", M, 46);
-    doc.setFontSize(9); doc.setTextColor(180, 180, 210); doc.text('OFFICIAL STARTUP AUDIT REPORT', M, 68);
-    doc.setFontSize(32); doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 211, 238);
+    doc.text("Official Startup Audit & Strategy Report", M, 46);
+    
+    doc.setFontSize(32); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
     const nameL = doc.splitTextToSize(result.name, W);
-    nameL.forEach((l, i) => doc.text(l, M, 80 + i * 13));
-    const my = 80 + nameL.length * 13 + 8;
+    nameL.forEach((l, i) => doc.text(l, M, 80 + i * 14));
+    
+    let curY = 80 + nameL.length * 14 + 10;
+    doc.setFontSize(12); doc.setFont('helvetica', 'italic'); doc.setTextColor(34, 211, 238);
+    doc.splitTextToSize(`"${result.overview}"`, W).forEach(l => { doc.text(l, M, curY); curY += 7; });
+    
+    curY += 15;
     doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
-    doc.text('Niche: ' + result.niche, M, my);
-    doc.text('Capital: INR ' + result.budget.toLocaleString('en-IN'), M, my + 10);
-    doc.text('Prepared for: ' + userName, M, my + 20);
-    doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), M, my + 30);
-    doc.setDrawColor(139, 92, 246); doc.setLineWidth(0.5); doc.line(M, my + 40, M + W, my + 40);
-    const bY = my + 52;
-    const bC = result.isInsufficient ? [244, 63, 94] : result.isTight ? [245, 158, 11] : [34, 197, 94];
-    const bL = result.isInsufficient ? 'INSUFFICIENT BUDGET -- Pivot Required' : result.isTight ? 'TIGHT BUDGET -- Lean Only' : 'VIABLE -- Ready to Execute';
-    doc.setFillColor(...bC); doc.roundedRect(M, bY - 5, W, 12, 2, 2, 'F');
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text(bL, M + W / 2, bY + 3, { align: 'center' });
-    doc.setFontSize(8); doc.setTextColor(70, 70, 100);
-    doc.text('Confidential. For personal business use only.', M, 282);
-    doc.text('Generated by Launchpad Bharat', M + W, 282, { align: 'right' });
+    doc.text('Niche: ' + result.niche, M, curY);
+    doc.text('Capital: INR ' + result.budget.toLocaleString('en-IN'), M, curY + 10);
+    doc.text('Founder: ' + userName, M, curY + 20);
+    doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), M, curY + 30);
 
-    // PAGE 2: ANALYSIS
-    doc.addPage(); y = 22;
-    bdy(result.name + ' -- Startup Blueprint', 17, true, [139, 92, 246]);
-    y += 3;
+    // PAGE 2: CORE STRATEGY
+    doc.addPage(); y = 30;
+    hdg('1. THE PROBLEM STATEMENT');
+    bdy(result.problem, 11);
 
-    hdg('SECTION 1 -- HONEST REALITY CHECK', [244, 63, 94]);
-    bdy(result.realityCheck, 10);
-    if (result.pivotStrategy) {
-      y += 3; hdg('PIVOT STRATEGY -- Build Capital First', [244, 63, 94]);
-      bdy(result.pivotStrategy.text, 10); y += 2;
-      bdy('Action: Earn INR ' + (result.pivotStrategy.target || 8000).toLocaleString('en-IN') + ' via freelance before launching.', 10, true, [244, 63, 94]);
-    }
+    hdg('2. THE PROPOSED SOLUTION');
+    bdy(result.solution, 11);
+
+    hdg('3. FUTURE SCOPE & SCALING');
+    bdy(result.future_scope, 11);
+
+    hdg('4. REVENUE & MONETIZATION');
+    bdy(Array.isArray(result.revenue_model) ? result.revenue_model.map(r => '• ' + r).join('\n') : result.revenue_model, 11);
+
+    // PAGE 3: FINANCIALS & TECH
+    doc.addPage(); y = 30;
+    hdg('5. FINANCIAL BREAKDOWN (ESTIMATES)');
+    bdy('All costs sourced from current Indian market averages. Includes 18% GST on services.', 9, false, [100, 100, 100]);
     y += 5;
 
-    hdg('SECTION 2 -- FINANCIAL TABLE (18% GST Applied)', [34, 211, 238]);
-    bdy('All costs sourced from real Indian market rates 2025-26. GST at 18% on digital services.', 9, false, [80, 80, 80]);
-    y += 3;
-    chk(12);
-    doc.setFillColor(139, 92, 246); doc.rect(M, y, W, 9, 'F');
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Expense Item', M + 2, y + 6); doc.text('Base', M + 100, y + 6);
-    doc.text('GST', M + 128, y + 6); doc.text('Total (INR)', M + 151, y + 6);
-    y += 11;
+    doc.setFillColor(34, 211, 238); doc.rect(M, y, W, 10, 'F');
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
+    doc.text('Expense Item', M + 2, y + 7); doc.text('Total (INR)', M + 145, y + 7);
+    y += 15;
+
     result.costs.forEach((row, i) => {
       chk(10);
-      if (i % 2 === 0) { doc.setFillColor(245, 245, 255); doc.rect(M, y - 2, W, 8, 'F'); }
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(30, 30, 30);
-      doc.text(doc.splitTextToSize(safe(row.item + (row.note ? ' (' + row.note + ')' : '')), 85)[0], M + 2, y + 4);
-      doc.text(row.base > 0 ? row.base.toString() : '0', M + 103, y + 4);
-      doc.text(row.gst > 0 ? row.gst.toString() : '--', M + 130, y + 4);
-      doc.setFont('helvetica', 'bold');
-      doc.text(row.total > 0 ? row.total.toString() : '0', M + 155, y + 4);
+      if (i % 2 === 0) { doc.setFillColor(245, 250, 255); doc.rect(M, y - 2, W, 8, 'F'); }
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 30, 30);
+      doc.text(safe(row.item), M + 2, y + 4);
+      doc.text(row.total.toLocaleString('en-IN'), M + 148, y + 4);
       y += 8;
     });
-    chk(12);
-    doc.setFillColor(34, 211, 238); doc.rect(M, y, W, 10, 'F');
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(12, 12, 32);
-    doc.text('TOTAL MINIMUM INVESTMENT', M + 2, y + 7);
-    doc.text('INR ' + result.totalCost.toLocaleString('en-IN'), M + 150, y + 7);
-    y += 13;
-    bdy('Your Capital: INR ' + result.budget.toLocaleString('en-IN') + '  |  Surplus: INR ' + Math.max(0, result.budget - result.totalCost).toLocaleString('en-IN'), 9, true, [80, 80, 80]);
+
     y += 5;
+    doc.setFillColor(139, 92, 246); doc.rect(M, y, W, 10, 'F');
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+    doc.text('MINIMUM VIABILITY COST', M + 2, y + 7);
+    doc.text('INR ' + result.totalCost.toLocaleString('en-IN'), M + 145, y + 7);
+    y += 15;
 
-    hdg('SECTION 3 -- EXECUTION STRATEGY', [139, 92, 246]);
-    bdy('Skills: ' + safe(result.skillList), 9, true, [80, 80, 80]); y += 2;
-    bdy(result.execStrategy, 10); y += 3;
-    hdg('TECH STACK', [139, 92, 246]);
-    bdy(result.techStack, 10); y += 5;
+    hdg('6. RECOMMENDED TECH STACK');
+    bdy(result.tech_stack, 11);
 
-    hdg('SECTION 4 -- COMPETITIVE LANDSCAPE', [34, 211, 238]);
-    blt('Incumbents are metro-focused, ignoring 400M+ tier-2/3 internet users who need simpler products.');
-    blt('Your edge: ' + safe((result.skillList || '').split(',')[0]) + ' expertise + community = lower CAC than VC-funded rivals.');
-    blt('Trust moat: WhatsApp-first support vs. competitor ticket systems. Human touch wins in India.');
-    blt('Price moat: Launch 40% below competitors -- viable because startup cost base is 60% lower.');
-    blt('Launch a 100-person WhatsApp group pre-launch to keep CAC near INR 0 in Months 1-2.');
-    y += 5;
-
-    hdg('SECTION 5 -- 12-MONTH REVENUE PROJECTIONS', [34, 211, 238]);
-    bdy('Conservative model: 8% paid conversion by Month 6, INR 499/month Pro pricing.', 9, false, [80, 80, 80]);
-    y += 3;
-    chk(12);
-    doc.setFillColor(139, 92, 246); doc.rect(M, y, W, 9, 'F');
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Period', M + 2, y + 6); doc.text('Users', M + 62, y + 6);
-    doc.text('Paid', M + 100, y + 6); doc.text('MRR (INR)', M + 138, y + 6);
-    y += 11;
-    [['Month 1',10,0],['Month 2',30,0],['Month 3',70,0.05],['Month 4',120,0.06],
-     ['Month 5',180,0.07],['Month 6',250,0.08],['Month 7-9',400,0.09],['Month 10-12',650,0.10]
-    ].forEach(([m, u, p], i) => {
-      chk(10); const paid = Math.floor(u * p); const mrr = paid * 499;
-      if (i % 2 === 0) { doc.setFillColor(248, 248, 255); doc.rect(M, y - 2, W, 8, 'F'); }
-      doc.setFont('helvetica', i === 7 ? 'bold' : 'normal'); doc.setFontSize(9); doc.setTextColor(30, 30, 30);
-      doc.text(m, M + 2, y + 4); doc.text(String(u), M + 65, y + 4); doc.text(String(paid), M + 103, y + 4);
-      if (mrr > 0) { doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 150, 94); }
-      doc.text(mrr > 0 ? mrr.toLocaleString('en-IN') : '--', M + 140, y + 4);
-      doc.setTextColor(30, 30, 30); y += 8;
-    });
-    y += 5; bdy('Year-End ARR Target: INR 3,89,000+ | Break-even expected Month 4.', 9, true, [34, 197, 94]); y += 5;
-
-    hdg('SECTION 6 -- RISK MATRIX', [244, 63, 94]);
-    chk(12);
-    doc.setFillColor(244, 63, 94); doc.rect(M, y, W, 9, 'F');
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Risk', M + 2, y + 6); doc.text('Prob', M + 83, y + 6);
-    doc.text('Impact', M + 108, y + 6); doc.text('Mitigation', M + 133, y + 6);
-    y += 11;
-    [
-      ['No Product-Market Fit (Months 1-2)', 'HIGH','HIGH', '30 interviews before building. Ship only when 10 say they will pay.'],
-      ['Cash Runway Ends', 'MED','HIGH', 'Reserve 15%. Freelance as bridge income.'],
-      ['Competitor Price War', 'MED','MED', 'Compete on community trust, not price.'],
-      ['GST Non-Compliance', 'LOW','HIGH', 'Register GST when revenue exceeds INR 20L. Use a CA.'],
-      ['Technical Downtime', 'LOW','MED', 'Deploy on Vercel/Railway. Aim for 99.5% uptime.'],
-    ].forEach((r, i) => {
-      chk(16);
-      if (i % 2 === 0) { doc.setFillColor(255, 248, 248); doc.rect(M, y - 2, W, 14, 'F'); }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(30, 30, 30);
-      doc.text(safe(r[0]), M + 2, y + 5);
-      const pC = r[1] === 'HIGH' ? [200,40,40] : r[1] === 'MED' ? [190,110,0] : [40,150,70];
-      doc.setTextColor(...pC); doc.text(r[1], M + 85, y + 5);
-      const iC = r[2] === 'HIGH' ? [200,40,40] : r[2] === 'MED' ? [190,110,0] : [40,150,70];
-      doc.setTextColor(...iC); doc.text(r[2], M + 110, y + 5);
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
-      doc.splitTextToSize(safe(r[3]), 50).forEach((l, li) => doc.text(l, M + 133, y + 5 + li * 4.5));
-      y += 14;
-    });
-    y += 5;
-
-    hdg('SECTION 7 -- MONETIZATION MODEL', [139, 92, 246]);
-    bdy(result.monetization, 10); y += 5;
-
-    hdg('SECTION 8 -- 6-MONTH EXECUTION ROADMAP', [34, 211, 238]);
+    // PAGE 4: ROADMAP
+    doc.addPage(); y = 30;
+    hdg('7. 6-MONTH EXECUTION ROADMAP');
     result.roadmap.forEach((step, i) => {
-      chk(18);
-      doc.setFillColor(20, 30, 60); doc.roundedRect(M, y - 1, W, 14, 2, 2, 'F');
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 211, 238);
-      doc.text('M' + (i + 1), M + 2, y + 6);
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 220);
-      const lines = doc.splitTextToSize(safe(step), W - 16);
-      lines.forEach((l, li) => doc.text(l, M + 12, y + 6 + li * 4.5));
-      y += Math.max(15, 6 + lines.length * 4.5 + 2);
+      chk(25);
+      doc.setFillColor(245, 245, 247); doc.roundedRect(M, y, W, 18, 2, 2, 'F');
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
+      doc.text('MONTH ' + (i + 1), M + 5, y + 11);
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
+      doc.setFontSize(9);
+      doc.text(doc.splitTextToSize(safe(step), W - 35), M + 30, y + 8);
+      y += 24;
     });
 
-    // FINAL PAGE: FOUNDERS + COMMUNITY
+    // FINAL PAGE: CREDITS
     doc.addPage();
     doc.setFillColor(12, 12, 32); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(139, 92, 246); doc.rect(0, 0, 6, 297, 'F');
-    let fy = 40;
+    let fy = 60;
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
-    doc.text('PREPARED & POWERED BY', M, fy); fy += 11;
-    doc.setFontSize(26); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+    doc.text('POWERED BY', M, fy); fy += 12;
+    doc.setFontSize(28); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
     doc.text('Launchpad Bharat', M, fy); fy += 10;
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 150, 190);
-    doc.text("India's Startup Blueprint Engine", M, fy); fy += 18;
-    doc.setDrawColor(139, 92, 246); doc.setLineWidth(0.4); doc.line(M, fy, M + W, fy); fy += 12;
-
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 150, 190);
+    doc.text("India's Premier Startup Architect Platform", M, fy); fy += 30;
+    
     // Founder cards
     doc.setFillColor(28, 18, 52); doc.roundedRect(M, fy, W, 40, 3, 3, 'F');
     doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
-    doc.text('FOUNDER', M + 5, fy + 9);
+    doc.text('FOUNDER & CEO', M + 5, fy + 10);
     doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Jai Anand', M + 5, fy + 21);
+    doc.text('Jai Anand', M + 5, fy + 22);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
-    doc.text('Founder, Launchpad Bharat', M + 5, fy + 30);
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
-    doc.text('CO-FOUNDER', M + 95, fy + 9);
-    doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Abhay Bansal', M + 95, fy + 21);
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
-    doc.text('Co-Founder, Launchpad Bharat', M + 95, fy + 30);
-    fy += 50;
-
-    // Contact
-    doc.setFillColor(18, 38, 58); doc.roundedRect(M, fy, W, 32, 3, 3, 'F');
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 211, 238);
-    doc.text('CONTACT & SUPPORT', M + 5, fy + 10);
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 210, 230);
-    doc.text('WhatsApp:  +91 93580 22343', M + 5, fy + 20);
-    doc.text('Website:   launchpadbharat.in', M + 5, fy + 28);
-    fy += 44;
-
-    // Community CTA
-    doc.setFillColor(10, 55, 35); doc.roundedRect(M, fy, W, 52, 3, 3, 'F');
-    doc.setDrawColor(34, 197, 94); doc.setLineWidth(1); doc.roundedRect(M, fy, W, 52, 3, 3, 'S');
-    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 197, 94);
-    doc.text('JOIN OUR FOUNDER COMMUNITY', M + W / 2, fy + 14, { align: 'center' });
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(180, 230, 200);
-    doc.text('Connect with 1000+ Indian founders. Get feedback, resources & mentorship.', M + W / 2, fy + 24, { align: 'center' });
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('WhatsApp Community Link:', M + W / 2, fy + 36, { align: 'center' });
-    doc.setFontSize(8); doc.setTextColor(34, 211, 238);
-    doc.text('chat.whatsapp.com/Ey4FCxCjL9x9fH698xNnkO', M + W / 2, fy + 44, { align: 'center' });
-    fy += 66;
-    doc.setFontSize(7.5); doc.setTextColor(60, 60, 90);
-    doc.text('Generated for ' + userName + ' on ' + new Date().toLocaleDateString('en-IN') + '. All projections are estimates based on market research.', M, fy);
-    doc.text('Launchpad Bharat does not guarantee business outcomes.', M, fy + 8);
-
-    // Watermark
-    const tp = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= tp; i++) {
-      doc.setPage(i);
-      doc.setGState(new doc.GState({ opacity: 0.04 }));
-      doc.setTextColor(139, 92, 246); doc.setFontSize(52);
-      doc.text('Launchpad Bharat', 105, 155, { angle: 45, align: 'center' });
-      doc.setGState(new doc.GState({ opacity: 1 }));
-    }
-
-    doc.save(result.name + '_Blueprint_LaunchpadBharat.pdf');
+    doc.text('Founder, Launchpad Bharat', M + 5, fy + 31);
+    
+    doc.save(result.name + '_Blueprint.pdf');
   };
 
   return (
@@ -666,24 +597,50 @@ const AIGenerators = () => {
           {result && !loading && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', animation: 'float 0.4s ease-out' }}>
               {/* Header */}
-              <div style={{ padding: '1.25rem', background: 'rgba(139,92,246,0.1)', borderRadius: '0.75rem', border: '1px solid rgba(139,92,246,0.3)' }}>
+              <div style={{ padding: '1.25rem', background: 'rgba(34,211,238,0.08)', borderRadius: '0.75rem', border: '1px solid rgba(34,211,238,0.2)' }}>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.25rem' }}>Startup Name</p>
                 <h4 style={{ fontSize: '1.75rem', color: 'var(--accent-cyan)', margin: 0 }}>{result.name}</h4>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{result.niche} · ₹{result.budget.toLocaleString('en-IN')}</p>
+                <p style={{ fontSize: '0.9rem', color: 'white', marginTop: '0.5rem', fontStyle: 'italic' }}>"{result.overview}"</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>{result.niche} · Budget: ₹{result.budget.toLocaleString('en-IN')}</p>
+              </div>
+
+              {/* Problem & Solution */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div style={{ padding: '1rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '0.75rem' }}>
+                  <p style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>The Problem</p>
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.problem}</p>
+                </div>
+                <div style={{ padding: '1rem', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '0.75rem' }}>
+                  <p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>The Solution</p>
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.solution}</p>
+                </div>
+              </div>
+
+              {/* Future Scope & Revenue Model */}
+              <div style={{ padding: '1rem', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '0.75rem' }}>
+                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Future Potential & Scaling</p>
+                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)', marginBottom: '1rem' }}>{result.future_scope}</p>
+                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Monetization Strategy</p>
+                {Array.isArray(result.revenue_model) ? (
+                  <ul style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)', paddingLeft: '1.25rem', margin: 0 }}>
+                    {result.revenue_model.map((method, idx) => (
+                      <li key={idx} style={{ marginBottom: '0.25rem' }}>{method}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.revenue_model}</p>
+                )}
               </div>
 
               {/* Reality Check */}
-              <div style={{ padding: '1rem', borderRadius: '0.75rem', background: result.isInsufficient ? 'rgba(244,63,94,0.08)' : result.isTight ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${result.isInsufficient ? 'rgba(244,63,94,0.3)' : result.isTight ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}`, fontSize: '0.9rem', lineHeight: 1.6 }}>
-                {result.realityCheck}
+              <div style={{ padding: '1rem', borderRadius: '0.75rem', background: result.isInsufficient ? 'rgba(244,63,94,0.08)' : result.isTight ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${result.isInsufficient ? 'rgba(244,63,94,0.3)' : result.isTight ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}`, fontSize: '0.85rem', lineHeight: 1.6 }}>
+                <span style={{ fontWeight: 700, color: result.isInsufficient ? '#f43f5e' : result.isTight ? '#f59e0b' : '#22c55e' }}>
+                  {result.isInsufficient ? '⚠️ BUDGET ALERT: ' : result.isTight ? '⚠️ TIGHT RUNWAY: ' : '✅ VIABLE: '}
+                </span>
+                {result.isInsufficient 
+                   ? `Your capital (₹${result.budget.toLocaleString()}) does not cover the minimum production costs (₹${result.totalCost.toLocaleString()}). You must freelance to build capital first.` 
+                   : `Your budget covers the minimum necessary setup of ₹${result.totalCost.toLocaleString()}. Execute aggressively.`}
               </div>
-
-              {/* Pivot Strategy */}
-              {result.pivotStrategy && (
-                <div style={{ padding: '1rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '0.75rem', fontSize: '0.88rem', lineHeight: 1.6 }}>
-                  <p style={{ fontWeight: 700, color: '#f43f5e', marginBottom: '0.4rem' }}>⚡ Pivot Strategy — Build Capital First</p>
-                  {result.pivotStrategy.text}
-                </div>
-              )}
 
               {/* Cost Table */}
               <div>

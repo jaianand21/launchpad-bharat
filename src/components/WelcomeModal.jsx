@@ -26,20 +26,25 @@ const WelcomeModal = ({ onComplete }) => {
     const visitorData = { name: name.trim(), email: email.trim(), mobile: mobile.trim(), joinedAt: new Date().toISOString() };
 
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(visitorData),
       });
-    } catch {
-      // Fail silently — still save locally so user isn't blocked
-      console.warn('Could not reach server, saving locally only.');
-    }
 
-    // Always save to localStorage regardless of server response
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(visitorData));
-    setDone(true);
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error('Server returned an error. Please try again.');
+      }
+
+      // Only save to localStorage and show success if the database actually received it
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(visitorData));
+      setDone(true);
+    } catch (err) {
+      console.error('Database Sync Error:', err.message);
+      setError('Database connection lost. Please check your internet or retry in 10 seconds.');
+    } finally {
+      setLoading(false);
+    }
 
     // Brief success state, then dismiss
     setTimeout(() => onComplete(visitorData), 1200);
@@ -110,7 +115,7 @@ const WelcomeModal = ({ onComplete }) => {
                 <div style={{ position: 'relative' }}>
                   <User size={16} style={iconStyle} />
                   <input
-                    type="text" placeholder="Rohit Sharma" value={name}
+                    type="text" placeholder="Write your name" value={name}
                     onChange={e => setName(e.target.value)} required autoFocus
                     style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
@@ -138,7 +143,7 @@ const WelcomeModal = ({ onComplete }) => {
                 <div style={{ position: 'relative' }}>
                   <Phone size={16} style={iconStyle} />
                   <input
-                    type="tel" placeholder="9876543210" value={mobile}
+                    type="tel" placeholder="Write your mobile number here" value={mobile}
                     onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required
                     style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}

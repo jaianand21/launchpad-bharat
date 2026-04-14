@@ -75,9 +75,32 @@ function App() {
         </Routes>
       </main>
 
+      <Footer />
       <FloatingWhatsApp />
     </div>
   );
 }
+
+// ── Footer ────────────────────────────────────────────────────────────────────
+const Footer = () => (
+  <footer style={{ padding: '3rem 0', borderTop: '1px solid var(--glass-border)', marginTop: '4rem', textAlign: 'center' }}>
+    <div className="container">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Launchpad <span className="text-accent">Bharat</span></h2>
+        <p className="text-secondary" style={{ fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto' }}>
+          Empowering the next generation of Indian entrepreneurs with AI-powered tools and resources.
+        </p>
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+            © {new Date().getFullYear()} Launchpad Bharat. All rights reserved.
+          </p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: 600, marginTop: '0.5rem' }}>
+            Built with ❤️ by <span style={{ color: 'white' }}>Jai Anand</span> (Founder & CEO)
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+);
 
 export default App;
