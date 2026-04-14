@@ -391,7 +391,7 @@ const AIGenerators = () => {
     bdy(result.future_scope, 11);
 
     hdg('4. REVENUE & MONETIZATION');
-    bdy(Array.isArray(result.revenue_model) ? result.revenue_model.map(r => '• ' + r).join('\n') : result.revenue_model, 11);
+    bdy(result.revenue_model, 11);
 
     // PAGE 3: FINANCIALS & TECH
     doc.addPage(); y = 30;
@@ -621,15 +621,7 @@ const AIGenerators = () => {
                 <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Future Potential & Scaling</p>
                 <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)', marginBottom: '1rem' }}>{result.future_scope}</p>
                 <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Monetization Strategy</p>
-                {Array.isArray(result.revenue_model) ? (
-                  <ul style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)', paddingLeft: '1.25rem', margin: 0 }}>
-                    {result.revenue_model.map((method, idx) => (
-                      <li key={idx} style={{ marginBottom: '0.25rem' }}>{method}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.revenue_model}</p>
-                )}
+                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.revenue_model}</p>
               </div>
 
               {/* Reality Check */}
