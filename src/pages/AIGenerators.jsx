@@ -275,19 +275,11 @@ const AIGenerators = () => {
 
       const blueprintData = await response.json();
       
-      // Calculate costs using our refined logic (keeping financial integrity)
-      const financialCosts = COST_TABLE(selectedNiches[0]?.label || 'E-commerce', Number(budget), skillsStr);
-      const totalCost = financialCosts.reduce((s, r) => s + r.total, 0);
-
       const finalResult = {
         ...blueprintData,
-        costs: financialCosts,
-        totalCost,
         budget: Number(budget),
         skillList: skillsStr,
-        niche: nichesStr,
-        isInsufficient: Number(budget) < totalCost,
-        isTight: Number(budget) >= totalCost && Number(budget) < (totalCost * 1.5)
+        niche: nichesStr
       };
 
       setResult(finalResult);
@@ -381,60 +373,31 @@ const AIGenerators = () => {
 
     // PAGE 2: CORE STRATEGY
     doc.addPage(); y = 30;
-    hdg('1. THE PROBLEM STATEMENT');
-    bdy(result.problem, 11);
+    hdg('1. PRODUCT LOGIC & USER FLOW');
+    bdy(result.product_logic, 11);
 
-    hdg('2. THE PROPOSED SOLUTION');
-    bdy(result.solution, 11);
+    hdg('2. LEAN TECH STACK');
+    bdy(result.lean_tech_stack, 11);
 
-    hdg('3. FUTURE SCOPE & SCALING');
-    bdy(result.future_scope, 11);
+    hdg('3. CRITICAL MARKET RISKS');
+    bdy(result.critical_risks, 11);
 
-    hdg('4. REVENUE & MONETIZATION');
-    bdy(result.revenue_model, 11);
-
-    // PAGE 3: FINANCIALS & TECH
+    // PAGE 3: FINANCIALS & ROADMAP
     doc.addPage(); y = 30;
-    hdg('5. FINANCIAL BREAKDOWN (ESTIMATES)');
-    bdy('All costs sourced from current Indian market averages. Includes 18% GST on services.', 9, false, [100, 100, 100]);
-    y += 5;
+    hdg('4. FINANCIAL ALLOCATION (MAX INR ' + result.budget.toLocaleString('en-IN') + ')');
+    bdy(result.financial_allocation, 11);
 
-    doc.setFillColor(34, 211, 238); doc.rect(M, y, W, 10, 'F');
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
-    doc.text('Expense Item', M + 2, y + 7); doc.text('Total (INR)', M + 145, y + 7);
-    y += 15;
-
-    result.costs.forEach((row, i) => {
-      chk(10);
-      if (i % 2 === 0) { doc.setFillColor(245, 250, 255); doc.rect(M, y - 2, W, 8, 'F'); }
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 30, 30);
-      doc.text(safe(row.item), M + 2, y + 4);
-      doc.text(row.total.toLocaleString('en-IN'), M + 148, y + 4);
-      y += 8;
-    });
-
-    y += 5;
-    doc.setFillColor(139, 92, 246); doc.rect(M, y, W, 10, 'F');
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('MINIMUM VIABILITY COST', M + 2, y + 7);
-    doc.text('INR ' + result.totalCost.toLocaleString('en-IN'), M + 145, y + 7);
-    y += 15;
-
-    hdg('6. RECOMMENDED TECH STACK');
-    bdy(result.tech_stack, 11);
-
-    // PAGE 4: ROADMAP
-    doc.addPage(); y = 30;
-    hdg('7. 6-MONTH EXECUTION ROADMAP');
-    result.roadmap.forEach((step, i) => {
+    y += 10;
+    hdg('5. 30-60-90 DAY EXECUTION ROADMAP');
+    result.roadmap?.forEach((step, i) => {
       chk(25);
-      doc.setFillColor(245, 245, 247); doc.roundedRect(M, y, W, 18, 2, 2, 'F');
+      doc.setFillColor(245, 245, 247); doc.roundedRect(M, y, W, 22, 2, 2, 'F');
       doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
-      doc.text('MONTH ' + (i + 1), M + 5, y + 11);
+      doc.text(i === 0 ? '30 DAYS' : i === 1 ? '60 DAYS' : '90 DAYS', M + 5, y + 13);
       doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
       doc.setFontSize(9);
       doc.text(doc.splitTextToSize(safe(step), W - 35), M + 30, y + 8);
-      y += 24;
+      y += 28;
     });
 
     // FINAL PAGE: CREDITS
@@ -604,86 +567,39 @@ const AIGenerators = () => {
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>{result.niche} · Budget: ₹{result.budget.toLocaleString('en-IN')}</p>
               </div>
 
-              {/* Problem & Solution */}
+              {/* Product Logic */}
+              <div style={{ padding: '1rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '0.75rem' }}>
+                <p style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Product Logic & User Flow</p>
+                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.product_logic}</p>
+              </div>
+
+              {/* Lean Tech Stack & Risks */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div style={{ padding: '1rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '0.75rem' }}>
-                  <p style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>The Problem</p>
-                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.problem}</p>
-                </div>
                 <div style={{ padding: '1rem', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '0.75rem' }}>
-                  <p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>The Solution</p>
-                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.solution}</p>
+                  <p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Lean Tech Stack</p>
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.lean_tech_stack}</p>
+                </div>
+                <div style={{ padding: '1rem', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '0.75rem' }}>
+                  <p style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Critical Market Risks</p>
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.critical_risks}</p>
                 </div>
               </div>
 
-              {/* Future Scope & Revenue Model */}
+              {/* Financial Allocation Native */}
               <div style={{ padding: '1rem', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '0.75rem' }}>
-                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Future Potential & Scaling</p>
-                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)', marginBottom: '1rem' }}>{result.future_scope}</p>
-                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Monetization Strategy</p>
-                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.revenue_model}</p>
+                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Financial Allocation (Max ₹{result.budget.toLocaleString()})</p>
+                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.financial_allocation}</p>
               </div>
 
-              {/* Reality Check */}
-              <div style={{ padding: '1rem', borderRadius: '0.75rem', background: result.isInsufficient ? 'rgba(244,63,94,0.08)' : result.isTight ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${result.isInsufficient ? 'rgba(244,63,94,0.3)' : result.isTight ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}`, fontSize: '0.85rem', lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 700, color: result.isInsufficient ? '#f43f5e' : result.isTight ? '#f59e0b' : '#22c55e' }}>
-                  {result.isInsufficient ? '⚠️ BUDGET ALERT: ' : result.isTight ? '⚠️ TIGHT RUNWAY: ' : '✅ VIABLE: '}
-                </span>
-                {result.isInsufficient 
-                   ? `Your capital (₹${result.budget.toLocaleString()}) does not cover the minimum production costs (₹${result.totalCost.toLocaleString()}). You must freelance to build capital first.` 
-                   : `Your budget covers the minimum necessary setup of ₹${result.totalCost.toLocaleString()}. Execute aggressively.`}
-              </div>
-
-              {/* Cost Table */}
-              <div>
-                <p style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                  Financial Breakdown (Real Rates + 18% GST)
-                </p>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                    <thead>
-                      <tr style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--accent-purple)' }}>
-                        <th style={{ padding: '0.5rem', textAlign: 'left', borderRadius: '0.25rem 0 0 0.25rem' }}>Expense</th>
-                        <th style={{ padding: '0.5rem', textAlign: 'right' }}>Base</th>
-                        <th style={{ padding: '0.5rem', textAlign: 'right' }}>GST</th>
-                        <th style={{ padding: '0.5rem', textAlign: 'right', borderRadius: '0 0.25rem 0.25rem 0' }}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.costs.map((row, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '0.5rem', color: 'var(--text-secondary)' }}>
-                            {row.item}{row.note && <span style={{ opacity: 0.6 }}> ({row.note})</span>}
-                          </td>
-                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>₹{row.base}</td>
-                          <td style={{ padding: '0.5rem', textAlign: 'right', color: '#f59e0b' }}>{row.gst > 0 ? `₹${row.gst}` : '—'}</td>
-                          <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>₹{row.total || 0}</td>
-                        </tr>
-                      ))}
-                      <tr style={{ background: 'rgba(139,92,246,0.1)', fontWeight: 700, color: 'var(--accent-purple)' }}>
-                        <td style={{ padding: '0.5rem' }}>Total Minimum</td>
-                        <td colSpan={2} />
-                        <td style={{ padding: '0.5rem', textAlign: 'right' }}>₹{result.totalCost.toLocaleString('en-IN')}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Execution & Roadmap Preview */}
-              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.07)', fontSize: '0.88rem', lineHeight: 1.6 }}>
-                <p style={{ fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.5rem' }}>
-                  <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '0.35rem' }} />Execution Strategy
-                </p>
-                {result.execStrategy}
-              </div>
-
+              {/* Roadmap */}
               <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.07)', fontSize: '0.85rem' }}>
-                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '0.5rem' }}>6-Month Roadmap</p>
-                {result.roadmap.slice(0, 3).map((step, i) => (
-                  <p key={i} style={{ marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>• {step}</p>
+                <p style={{ fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.5rem' }}>Tactical 30-60-90 Day Roadmap</p>
+                {result.roadmap?.map((step, i) => (
+                  <div key={i} style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                    <span style={{color: 'var(--accent-cyan)'}}>•</span>
+                    <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }}>{step}</span>
+                  </div>
                 ))}
-                <p style={{ opacity: 0.5, fontSize: '0.8rem', fontStyle: 'italic' }}>...full roadmap in PDF</p>
               </div>
 
               {/* Rating */}
