@@ -36,143 +36,6 @@ const selectStyles = {
   placeholder: (base) => ({ ...base, color: 'rgba(255,255,255,0.3)' }),
 };
 
-// ─── Budget Feasibility Logic ──────────────────────────────────────────────
-const COST_TABLE = (niche, budget, skillList) => {
-  const isDigital = ['SaaS', 'Gaming & E-sports', 'EdTech', 'FinTech', 'Creator Economy'].includes(niche);
-  const isPhysical = ['E-commerce', 'D2C Brands', 'Food & Beverage', 'Local Retail Management'].includes(niche);
-  const sList = skillList.toLowerCase();
-  
-  const hasTech = sList.includes('web dev') || sList.includes('react') || sList.includes('python') || sList.includes('app dev') || sList.includes('software');
-  const hasMarketing = sList.includes('marketing') || sList.includes('sales') || sList.includes('seo') || sList.includes('social media');
-  const hasDesign = sList.includes('ui/ux') || sList.includes('graphic') || sList.includes('video editing');
-  
-  const base = [
-    { item: '.com / .in Domain (1 year)', base: 799 },
-    { item: 'Web Hosting (Shared, 1 year)', base: 1499 },
-    { item: 'Business Email (Google Workspace)', base: 750 },
-    { item: 'SSL Certificate & Gateway Setup', base: 0, note: 'Free via Let\'s Encrypt / Razorpay' },
-  ];
-
-  // Legal Compliance dynamic allocation
-  if (budget >= 50000) {
-    base.push({ item: 'Private Limited Company Registration', base: 8500, note: 'Required for raising VC funding' });
-    base.push({ item: 'Trademark Filing (Govt Fees)', base: 4500, note: 'Brand protection' });
-  } else {
-    base.push({ item: 'Sole Proprietorship Registration', base: 1500, note: 'MSME/Udyam is free, CA fee for GST/Setup' });
-  }
-
-  // Developer costs
-  if (!hasTech) {
-    base.push({ item: 'MVP App/Web Development (Freelance)', base: budget > 30000 ? 15000 : 8000, note: 'No in-house tech talent found in skills' });
-  }
-  
-  // Marketing & Design
-  if (!hasDesign) {
-    base.push({ item: 'Logo + Branding (Designer)', base: 1500 });
-  }
-  if (!hasMarketing) {
-    base.push({ item: 'Digital Marketing (Month 1 Ads)', base: 5000, note: 'Hiring agency/freelancer for initial push' });
-  } else {
-    base.push({ item: 'Direct Ad Spend (Self-managed)', base: 2000, note: 'Zero agency fees due to marketing skills' });
-  }
-
-  if (isDigital && budget >= 25000) {
-     base.push({ item: 'Cloud Infrastructure (AWS/Supabase)', base: 2500 });
-  }
-  if (isPhysical) {
-    base.push({ item: 'Inventory/Sample Stock (Minimum)', base: budget > 20000 ? 10000 : 3500 });
-    base.push({ item: 'Packaging & Logistics Setup', base: 1500 });
-  }
-
-  return base.map(row => ({
-    ...row,
-    gst: row.base > 0 ? Math.round(row.base * 0.18) : 0,
-    total: row.base > 0 ? Math.round(row.base * 1.18) : 0,
-  }));
-};
-
-const computeName = (niche, skills) => {
-  const nicheMap = {
-    'E-commerce': ['KartNest', 'ShopDisha', 'BharatCart'],
-    'Gaming & E-sports': ['ArenaEdge', 'SkillArena', 'ProCircuit'],
-    'SaaS': ['FlowStack', 'NestLogic', 'PulseKit'],
-    'EdTech': ['SkillVeda', 'LernPathway', 'MindRise'],
-    'FinTech': ['PayDisha', 'CoinRoots', 'WealthVeda'],
-    'D2C Brands': ['BharatDirect', 'RootBrands', 'CraftCircle'],
-    'AgriTech': ['KisanEdge', 'HarvestAI', 'FieldStack'],
-    'Food & Beverage': ['RasaBox', 'ThaliDirect', 'SpiceRoute'],
-    'Creator Economy': ['SpotlightIN', 'CreatorDen', 'ViralRoots'],
-    'Healthcare': ['CareNest', 'VitalBridge', 'HealthDisha'],
-  };
-  const options = nicheMap[niche] || ['LaunchCore', 'BuildBridge', 'StartEdge'];
-  return options[Math.floor(Math.random() * options.length)];
-};
-
-// ─── Blueprint Generator ───────────────────────────────────────────────────
-const buildBlueprint = (skills, niches, budget, rejectedNames = []) => {
-  const bNum = Number(budget);
-  const niche = niches[0]?.value || 'E-commerce';
-  const skillListRaw = skills.map(s => s.label).join(', ');
-  const sList = skillListRaw.toLowerCase();
-  
-  const hasTech = sList.includes('web dev') || sList.includes('react') || sList.includes('python') || sList.includes('app dev') || sList.includes('software');
-
-  const costs = COST_TABLE(niche, bNum, skillListRaw);
-  const totalCost = costs.reduce((s, r) => s + r.total, 0);
-
-  const dynamicMinViable = !hasTech ? 12000 : 5000;
-  
-  const isInsufficient = bNum < dynamicMinViable;
-  const isTight = bNum >= dynamicMinViable && bNum < totalCost;
-
-  let name = computeName(niche, skills);
-  while (rejectedNames.includes(name)) {
-    name = computeName(niche, skills) + 'Pro';
-  }
-
-  const pivotStrategy = isInsufficient ? {
-    active: true,
-    text: `With ₹${bNum}, you cannot legally operate or build this setup. Because you lack the necessary cross-functional skills, you must pay external operators. The absolute minimum to go live is ~₹${totalCost.toLocaleString('en-IN')} incl. GST. Pivot Path: Use your existing skills (${skillListRaw || 'general tasks'}) to freelance for 1 month. Save the ₹${(totalCost - bNum).toLocaleString('en-IN')} difference before launching the actual startup.`,
-    target: totalCost,
-  } : null;
-
-  const techStack = hasTech 
-    ? (bNum < 20000 ? 'Self-Coded MVP: Ship fast with Next.js/Tailwind & Supabase. Host on Vercel (Free). Zero Tech Cost.' : 'Custom Production Stack: React/Node on AWS EC2 or DigitalOcean. You code it; spend budget on premium APIs like OpenAI.')
-    : (bNum < 20000 ? 'No-Code Stack: You must use Bubble.io or Shopify. Do not hire expensive coders yet. Use standard templates.' : 'Freelance MVP: Hire a mid-level React/Flutter developer. Keep the scope strictly to ONE core feature to avoid burning your ₹' + bNum + ' budget.');
-
-  const isEcom = ['E-commerce', 'D2C Brands', 'Local Retail Management'].includes(niche);
-
-  const roadmap = [
-    `Month 1 (Validation): ${isEcom ? 'Finalize vendor sourcing and order minimum sample quantities.' : 'Conduct 30 customer interviews in your city to validate the pain point.'} Lock name "${name}", domain, and social handles.`,
-    `Month 2 (Build & Setup): ${hasTech ? "Code the MVP yourself." : "Hire an external freelancer to build the MVP or No-Code it."} Setup Razorpay & legal compliance.`,
-    `Month 3 (Soft Launch): Open to 100 beta testers. ${isEcom ? "Run small localized WhatsApp delivery campaigns." : "Reach out organically via LinkedIn and Twitter/X."} Collect NPS feedback.`,
-    `Month 4 (Iterate & Monetize): Fix top 3 complaints based on beta data. Introduce paid tiers or full-price products.`,
-    `Month 5 (Acquire): Inject ₹${Math.round(bNum * 0.2)} into targeted Meta/Google ads. Track Customer Acquisition Cost (CAC) relentlessly.`,
-    `Month 6 (Scale or Pivot): If CAC translates to profitable LTV — double down on ad spend. If not, pivot the product offering immediately.`,
-  ];
-
-  return {
-    name,
-    niche,
-    budget: bNum,
-    costs,
-    totalCost,
-    isInsufficient,
-    isTight,
-    pivotStrategy,
-    realityCheck: isInsufficient
-      ? `⚠️ AI Reality Check: ₹${bNum} is insufficient. The calculated external costs (₹${totalCost.toLocaleString('en-IN')} incl. GST) consume your runway.`
-      : isTight
-      ? `⚠️ Tight Runway: ₹${bNum} barely covers startup setup (₹${totalCost.toLocaleString('en-IN')} incl. GST). Operate extremely lean.`
-      : `✅ Viable Runway: ₹${bNum} clears the minimum robust setup cost (₹${totalCost.toLocaleString('en-IN')}). Execute fast.`,
-    execStrategy: `Step 1: Register "${name}". Step 2: Use ${hasTech ? "your coding skills" : "No-Code tools / freelancers"} to build the MVP. Step 3: Leverage your unique skills (${skillListRaw}) to hustle for the first 10 paying customers without spending money on Ads.`,
-    monetization: `Phase 1 (Months 1–3): Penetration pricing to build initial traction. Phase 2 (Months 4–6): Launch premium segment. Maintain tight LTV:CAC ratio.`,
-    techStack,
-    roadmap,
-    skillList: skillListRaw,
-  };
-};
-
 // ─── Star Rating Component ─────────────────────────────────────────────────
 const StarRating = ({ value, onChange }) => (
   <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -181,6 +44,25 @@ const StarRating = ({ value, onChange }) => (
         <Star size={22} fill={n <= value ? '#f59e0b' : 'none'} color={n <= value ? '#f59e0b' : 'rgba(255,255,255,0.2)'} />
       </button>
     ))}
+  </div>
+);
+
+// ─── Section Card Component ────────────────────────────────────────────────
+const Section = ({ title, color = '#8b5cf6', children }) => (
+  <div style={{ padding: '1.25rem', background: `${color}08`, border: `1px solid ${color}33`, borderRadius: '0.75rem' }}>
+    <p style={{ fontWeight: 700, color, fontSize: '0.85rem', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+    {children}
+  </div>
+);
+
+const Body = ({ children }) => (
+  <p style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>{children}</p>
+);
+
+const KVRow = ({ label, value }) => (
+  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, minWidth: '110px' }}>{label}:</span>
+    <span style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{value}</span>
   </div>
 );
 
@@ -214,7 +96,7 @@ const AIGenerators = () => {
 
   // Warm-up ping: wake the Render backend on page load to avoid cold-start timeout
   useEffect(() => {
-    const apiBase = import.meta.env.VITE_API_URL || 'https://launchpad-bharat-backend.onrender.com';
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     fetch(`${apiBase}/health`).catch(() => {}); // Silent — just wakes up the server
   }, []);
 
@@ -223,7 +105,6 @@ const AIGenerators = () => {
     window.scrollTo(0, 0);
     if (searchParams.get('saved') === 'true' && savedBlueprints.length > 0) {
       setShowSaved(true);
-      // Optional: remove query string so refreshing doesn't keep it open
       setSearchParams({});
     }
   }, [searchParams, savedBlueprints.length, setSearchParams]);
@@ -241,9 +122,9 @@ const AIGenerators = () => {
     setIsTyping(true);
 
     setTimeout(() => {
-      let reply = 'Interesting angle. What is your starting capital (in ₹) and your primary skill set? That determines whether this idea is viable or needs a pivot.';
+      let reply = 'Interesting angle. What is your starting capital (in INR) and your primary skill set? That determines whether this idea is viable or needs a pivot.';
       if (/\d{3,}/.test(chatInput)) reply = `Got the budget figure. Now — what is your primary skill? Web Dev, Marketing, Operations? That shapes how I build the execution strategy for you.`;
-      else if (/skill|dev|design|market/i.test(chatInput)) reply = `Noted the skills. You can hit "Generate Blueprint from Chat" now, or keep refining. I need your ₹ budget to validate feasibility.`;
+      else if (/skill|dev|design|market/i.test(chatInput)) reply = `Noted the skills. You can hit "Generate Blueprint from Chat" now, or keep refining. I need your INR budget to validate feasibility.`;
       setMessages([...newMessages, { role: 'assistant', text: reply }]);
       setIsTyping(false);
     }, 1200);
@@ -263,7 +144,7 @@ const AIGenerators = () => {
     const nichesStr = selectedNiches.map(n => n.label).join(', ');
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'https://launchpad-bharat-backend.onrender.com';
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiBase}/api/generate-blueprint`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -289,6 +170,8 @@ const AIGenerators = () => {
       };
 
       setResult(finalResult);
+      // Scroll to result
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     } catch (err) {
       console.error('[GENERATE] Error:', err.message);
       alert('Error: ' + err.message);
@@ -300,15 +183,15 @@ const AIGenerators = () => {
   const handleLike = () => {
     if (!result) return;
     const entry = { ...result, savedAt: new Date().toISOString(), rating };
-    const updated = [entry, ...savedBlueprints.filter(b => b.name !== result.name)];
+    const updated = [entry, ...savedBlueprints.filter(b => b.startup_name !== result.startup_name)];
     setSavedBlueprints(updated);
     localStorage.setItem('saved_blueprints', JSON.stringify(updated));
-    alert(`"${result.name}" saved to your Saved Blueprints!`);
+    alert(`"${result.startup_name}" saved to your Saved Blueprints!`);
   };
 
   const handleDislike = () => {
     if (!result) return;
-    const newRejected = [...rejectedNames, result.name];
+    const newRejected = [...rejectedNames, result.startup_name];
     setRejectedNames(newRejected);
     runGenerate(newRejected);
   };
@@ -320,14 +203,14 @@ const AIGenerators = () => {
     runGenerate(rejectedNames);
   };
 
-  // ── PDF Download ──────────────────────────────────────────────────────────
+  // ── PDF Download (18 pages) ──────────────────────────────────────────────
   const generatePDF = () => {
     if (!result) return;
     const doc = new jsPDF();
     const M = 20, W = 170;
     let y = 20;
 
-    const safe = (t) => String(t).replace(/[^\x00-\x7F]/g, c =>
+    const safe = (t) => String(t || '').replace(/[^\x00-\x7F]/g, c =>
       ({ '₹': 'INR ', '✅': '[OK]', '⚠️': '[!]', '❌': '[X]' }[c] || ''));
 
     const chk = (n = 12) => { if (y + n > 275) { doc.addPage(); y = 22; } };
@@ -353,6 +236,8 @@ const AIGenerators = () => {
       y += 4;
     };
 
+    const r = result;
+
     // PAGE 1: COVER
     doc.setFillColor(12, 12, 32); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(34, 211, 238); doc.rect(0, 0, 6, 297, 'F');
@@ -360,53 +245,164 @@ const AIGenerators = () => {
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(34, 211, 238);
     doc.text('LAUNCHPAD BHARAT', M, 38);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 120, 160);
-    doc.text("Official Startup Audit & Strategy Report", M, 46);
+    doc.text("Official Startup Blueprint & Strategy Report", M, 46);
     
     doc.setFontSize(32); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    const nameL = doc.splitTextToSize(result.name, W);
+    const nameL = doc.splitTextToSize(r.startup_name || r.name || 'Startup', W);
     nameL.forEach((l, i) => doc.text(l, M, 80 + i * 14));
     
-    let curY = 80 + nameL.length * 14 + 10;
-    doc.setFontSize(12); doc.setFont('helvetica', 'italic'); doc.setTextColor(34, 211, 238);
-    doc.splitTextToSize(`"${result.overview}"`, W).forEach(l => { doc.text(l, M, curY); curY += 7; });
+    let curY = 80 + nameL.length * 14 + 8;
+    doc.setFontSize(14); doc.setFont('helvetica', 'italic'); doc.setTextColor(34, 211, 238);
+    doc.splitTextToSize(safe(r.tagline || ''), W).forEach(l => { doc.text(l, M, curY); curY += 7; });
     
     curY += 15;
     doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
-    doc.text('Niche: ' + result.niche, M, curY);
-    doc.text('Capital: INR ' + result.budget.toLocaleString('en-IN'), M, curY + 10);
+    doc.text('Niche: ' + (r.niche || ''), M, curY);
+    doc.text('Capital: INR ' + (r.budget || 0).toLocaleString('en-IN'), M, curY + 10);
     doc.text('Founder: ' + userName, M, curY + 20);
     doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), M, curY + 30);
+    if (r.foreign_inspiration) {
+      curY += 45;
+      doc.setFontSize(9); doc.setTextColor(139, 92, 246);
+      doc.text('Inspired by: ' + safe(r.foreign_inspiration.company) + ' (' + safe(r.foreign_inspiration.country) + ')', M, curY);
+    }
 
-    // PAGE 2: CORE STRATEGY
+    // PAGE 2: THE PROBLEM
     doc.addPage(); y = 30;
-    hdg('1. PRODUCT LOGIC & USER FLOW');
-    bdy(result.product_logic, 11);
+    hdg('1. THE PROBLEM');
+    bdy(r.problem_statement || '', 11);
 
-    hdg('2. LEAN TECH STACK');
-    bdy(result.lean_tech_stack, 11);
-
-    hdg('3. CRITICAL MARKET RISKS');
-    bdy(result.critical_risks, 11);
-
-    // PAGE 3: FINANCIALS & ROADMAP
+    // PAGE 3: THE SOLUTION + INDIAN ADAPTATION
     doc.addPage(); y = 30;
-    hdg('4. FINANCIAL ALLOCATION (MAX INR ' + result.budget.toLocaleString('en-IN') + ')');
-    bdy(result.financial_allocation, 11);
+    hdg('2. THE SOLUTION');
+    bdy(r.solution || '', 11);
+    
+    if (r.indian_adaptation) {
+      y += 5;
+      hdg('3. INDIAN MARKET ADAPTATION', [34, 211, 238]);
+      bdy('Distribution: ' + (r.indian_adaptation.distribution || ''), 10);
+      bdy('Trust Building: ' + (r.indian_adaptation.trust_building || ''), 10);
+      bdy('Language Strategy: ' + (r.indian_adaptation.language || ''), 10);
+      bdy('Payment Strategy: ' + (r.indian_adaptation.payment || ''), 10);
+    }
 
-    y += 10;
-    hdg('5. 30-60-90 DAY EXECUTION ROADMAP');
-    result.roadmap?.forEach((step, i) => {
-      chk(25);
-      doc.setFillColor(245, 245, 247); doc.roundedRect(M, y, W, 22, 2, 2, 'F');
-      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
-      doc.text(i === 0 ? '30 DAYS' : i === 1 ? '60 DAYS' : '90 DAYS', M + 5, y + 13);
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
-      doc.setFontSize(9);
-      doc.text(doc.splitTextToSize(safe(step), W - 35), M + 30, y + 8);
-      y += 28;
-    });
+    // PAGE 4: REVENUE MODEL
+    if (r.revenue_model) {
+      doc.addPage(); y = 30;
+      hdg('4. BUSINESS & REVENUE MODEL', [34, 197, 94]);
+      bdy('Months 1-3: ' + (r.revenue_model.month_1_to_3 || ''), 10);
+      bdy('Months 4-6: ' + (r.revenue_model.month_4_to_6 || ''), 10);
+      bdy('Year 2 Scale: ' + (r.revenue_model.year_2 || ''), 10);
+      bdy('Break-Even Target: ' + (r.revenue_model.break_even_target || ''), 10, true, [34, 197, 94]);
+    }
 
-    // FINAL PAGE: CREDITS
+    // PAGE 5: FREE TECH STACK
+    if (r.free_tech_stack) {
+      doc.addPage(); y = 30;
+      hdg('5. FREE TECH STACK', [99, 102, 241]);
+      const stack = r.free_tech_stack;
+      Object.entries(stack).forEach(([key, val]) => {
+        bdy(key.charAt(0).toUpperCase() + key.slice(1) + ': ' + val, 10);
+      });
+    }
+
+    // PAGE 6: FINANCIAL BREAKDOWN
+    doc.addPage(); y = 30;
+    hdg('6. FINANCIAL BREAKDOWN (MAX INR ' + (r.budget || 0).toLocaleString('en-IN') + ')', [245, 158, 11]);
+    if (r.financial_allocation?.line_items) {
+      // Table header
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 80, 80);
+      doc.text('Item', M, y); doc.text('Cost', M + 100, y); doc.text('Free Alternative', M + 130, y);
+      y += 6;
+      doc.setDrawColor(200, 200, 200); doc.line(M, y, M + W, y); y += 5;
+      doc.setFont('helvetica', 'normal');
+      r.financial_allocation.line_items.forEach(item => {
+        chk(8);
+        doc.setTextColor(40, 40, 40);
+        doc.text(safe(item.item || '').substring(0, 40), M, y);
+        doc.text(safe(item.cost || ''), M + 100, y);
+        doc.setTextColor(100, 100, 100);
+        doc.text(safe(item.free_alternative || '').substring(0, 25), M + 130, y);
+        y += 7;
+      });
+      y += 5;
+      bdy('Total Spent: ' + (r.financial_allocation.total_spent || ''), 10, true);
+      bdy('Emergency Reserve: ' + (r.financial_allocation.reserve || ''), 10);
+    } else if (typeof r.financial_allocation === 'string') {
+      bdy(r.financial_allocation, 10);
+    }
+
+    // PAGES 7-12: 6-MONTH ROADMAP
+    if (r.six_month_roadmap) {
+      r.six_month_roadmap.forEach((m) => {
+        doc.addPage(); y = 30;
+        hdg(m.month + ' — ' + (m.theme || ''), [34, 211, 238]);
+        if (m.weekly_tasks) {
+          m.weekly_tasks.forEach(task => {
+            bdy('  ' + task, 10);
+          });
+        }
+        y += 5;
+        bdy('Milestone: ' + (m.milestone || ''), 10, true, [34, 211, 238]);
+      });
+    }
+
+    // PAGE 13: RISK MATRIX
+    if (r.critical_risks && Array.isArray(r.critical_risks)) {
+      doc.addPage(); y = 30;
+      hdg('RISK MATRIX', [244, 63, 94]);
+      r.critical_risks.forEach((risk, i) => {
+        chk(30);
+        bdy(`Risk ${i + 1}: ${risk.risk || ''}`, 10, true, [244, 63, 94]);
+        bdy(`Probability: ${risk.probability || 'N/A'} | Impact: ${risk.impact || 'N/A'}`, 9);
+        bdy(`Mitigation: ${risk.mitigation || ''}`, 9);
+        y += 3;
+      });
+    }
+
+    // PAGE 14: LEGAL & COMPLIANCE
+    if (r.legal_and_compliance) {
+      doc.addPage(); y = 30;
+      hdg('LEGAL & COMPLIANCE', [245, 158, 11]);
+      bdy('Business Registration: ' + (r.legal_and_compliance.business_registration || ''), 10);
+      bdy('GST Registration: ' + (r.legal_and_compliance.gst_registration || ''), 10);
+      if (r.legal_and_compliance.required_documents) {
+        bdy('Required Documents:', 10, true);
+        r.legal_and_compliance.required_documents.forEach(d => bdy('  - ' + d, 9));
+      }
+      bdy('Warnings: ' + (r.legal_and_compliance.important_warnings || ''), 10, false, [244, 63, 94]);
+    }
+
+    // PAGE 15: WEBSITE MUST-HAVES
+    if (r.website_must_haves) {
+      doc.addPage(); y = 30;
+      hdg('WEBSITE BLUEPRINT', [99, 102, 241]);
+      r.website_must_haves.forEach((f, i) => bdy(`${i + 1}. ${f}`, 10));
+    }
+
+    // PAGE 16: FOUNDER SUPERPOWER + TIPS
+    doc.addPage(); y = 30;
+    hdg("FOUNDER'S EDGE", [34, 197, 94]);
+    bdy(r.founder_superpower || '', 11);
+    if (r.founder_tips) {
+      y += 5;
+      hdg('FOUNDER TIPS', [139, 92, 246]);
+      r.founder_tips.forEach((tip, i) => bdy(`${i + 1}. ${tip}`, 10));
+    }
+
+    // PAGE 17: HONEST VERDICT
+    if (r.honest_verdict) {
+      doc.addPage(); y = 30;
+      hdg('HONEST VERDICT', [244, 63, 94]);
+      bdy('Viability Score: ' + (r.honest_verdict.viability_score || ''), 14, true, [34, 211, 238]);
+      y += 3;
+      bdy('Best Case: ' + (r.honest_verdict.best_case || ''), 10);
+      bdy('Worst Case: ' + (r.honest_verdict.worst_case || ''), 10, false, [244, 63, 94]);
+      y += 3;
+      bdy('Make or Break Factor: ' + (r.honest_verdict.one_thing_that_will_make_or_break_this || ''), 11, true);
+    }
+
+    // PAGE 18: CREDITS
     doc.addPage();
     doc.setFillColor(12, 12, 32); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(139, 92, 246); doc.rect(0, 0, 6, 297, 'F');
@@ -426,16 +422,28 @@ const AIGenerators = () => {
     doc.text('Jai Anand', M + 5, fy + 22);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
     doc.text('Founder, Launchpad Bharat', M + 5, fy + 31);
+
+    fy += 50;
+    doc.setFillColor(28, 18, 52); doc.roundedRect(M, fy, W, 40, 3, 3, 'F');
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
+    doc.text('CO-FOUNDER', M + 5, fy + 10);
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+    doc.text('Abhay Bansal', M + 5, fy + 22);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
+    doc.text('Co-Founder, Launchpad Bharat', M + 5, fy + 31);
     
-    doc.save(result.name + '_Blueprint.pdf');
+    doc.save((r.startup_name || r.name || 'Blueprint') + '_Blueprint.pdf');
   };
+
+  // ── Helper: get startup name from old or new schema ──────────────────────
+  const getName = (r) => r?.startup_name || r?.name || 'Startup';
 
   return (
     <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '3rem 2rem' }}>
       <div className="text-center mb-8">
         <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Advanced <span className="text-accent">Startup Builder</span></h1>
         <p className="text-secondary" style={{ fontSize: '1.1rem', maxWidth: '800px', margin: '0 auto' }}>
-          Welcome, {userName}. This tool gives you a <strong>brutally honest</strong> blueprint — real costs, real GST, real feasibility.
+          Welcome, {userName}. This tool gives you a <strong>brutally honest</strong> 18-page blueprint — real costs, real risks, real feasibility.
         </p>
       </div>
 
@@ -451,7 +459,7 @@ const AIGenerators = () => {
       {/* Saved Blueprints Panel */}
       {showSaved && savedBlueprints.length > 0 && (
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', color: 'var(--accent-cyan)' }}>📌 Saved Blueprints</h3>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', color: 'var(--accent-cyan)' }}>Saved Blueprints</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
             {savedBlueprints.map((bp, i) => (
               <div
@@ -461,10 +469,10 @@ const AIGenerators = () => {
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.16)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.25)'; }}
               >
-                <p style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: '0.25rem', color: 'var(--accent-cyan)' }}>{bp.name}</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{bp.niche} · ₹{bp.budget?.toLocaleString('en-IN')}</p>
+                <p style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: '0.25rem', color: 'var(--accent-cyan)' }}>{getName(bp)}</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{bp.niche} · INR {bp.budget?.toLocaleString('en-IN')}</p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Saved {new Date(bp.savedAt).toLocaleDateString('en-IN')}</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: 600 }}>Click to view full blueprint + download PDF →</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: 600 }}>Click to view full blueprint + download PDF</p>
               </div>
             ))}
           </div>
@@ -486,15 +494,15 @@ const AIGenerators = () => {
               <CreatableSelect isMulti options={NICHES} styles={selectStyles} placeholder="Search or add..." onChange={setSelectedNiches} formatCreateLabel={(v) => `Add "${v}"`} noOptionsMessage={() => 'Type a niche and press Enter'} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Starting Capital (₹)</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Starting Capital (INR)</label>
               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0 1rem', borderRadius: '0.5rem', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center' }}>
-                <span className="text-secondary" style={{ marginRight: '0.5rem', fontSize: '1.1rem' }}>₹</span>
+                <span className="text-secondary" style={{ marginRight: '0.5rem', fontSize: '1.1rem' }}>INR</span>
                 <input type="number" placeholder="e.g., 15000" value={budget} onChange={e => setBudget(e.target.value)}
                   style={{ width: '100%', padding: '0.75rem 0', background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '1rem' }} required />
               </div>
               {budget && Number(budget) < 5000 && (
                 <p style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <AlertTriangle size={13} /> Below minimum viability — pivot strategy will be generated
+                  <AlertTriangle size={13} /> Below minimum viability — service/consulting model will be suggested
                 </p>
               )}
             </div>
@@ -551,15 +559,15 @@ const AIGenerators = () => {
           {!result && !loading && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', textAlign: 'center' }}>
               <FileText size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-              <p>Fill the form and click Generate to get your honest, cost-validated startup blueprint.</p>
+              <p>Fill the form and click Generate to get your 18-page startup blueprint.</p>
             </div>
           )}
 
           {loading && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: 50, height: 50, border: '4px solid var(--accent-purple)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-              <p style={{ marginTop: '1rem' }}>Running feasibility analysis...</p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Calculating real costs with 18% GST...</p>
+              <p style={{ marginTop: '1rem' }}>AI is building your 18-page blueprint...</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Analyzing market, risks, legal, and financials...</p>
             </div>
           )}
 
@@ -568,45 +576,178 @@ const AIGenerators = () => {
               {/* Header */}
               <div style={{ padding: '1.25rem', background: 'rgba(34,211,238,0.08)', borderRadius: '0.75rem', border: '1px solid rgba(34,211,238,0.2)' }}>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.25rem' }}>Startup Name</p>
-                <h4 style={{ fontSize: '1.75rem', color: 'var(--accent-cyan)', margin: 0 }}>{result.name}</h4>
-                <p style={{ fontSize: '0.9rem', color: 'white', marginTop: '0.5rem', fontStyle: 'italic' }}>"{result.overview}"</p>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>{result.niche} · Budget: ₹{result.budget.toLocaleString('en-IN')}</p>
+                <h4 style={{ fontSize: '1.75rem', color: 'var(--accent-cyan)', margin: 0 }}>{getName(result)}</h4>
+                {result.tagline && <p style={{ fontSize: '1rem', color: 'white', marginTop: '0.4rem', fontStyle: 'italic' }}>"{result.tagline}"</p>}
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>{result.niche} · Budget: INR {result.budget?.toLocaleString('en-IN')}</p>
               </div>
 
-              {/* Product Logic */}
-              <div style={{ padding: '1rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '0.75rem' }}>
-                <p style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Product Logic & User Flow</p>
-                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.product_logic}</p>
-              </div>
+              {/* Foreign Inspiration */}
+              {result.foreign_inspiration && (
+                <Section title="Foreign Inspiration" color="#6366f1">
+                  <KVRow label="Company" value={result.foreign_inspiration.company} />
+                  <KVRow label="Country" value={result.foreign_inspiration.country} />
+                  <KVRow label="Gap" value={result.foreign_inspiration.why_not_in_india_yet} />
+                </Section>
+              )}
 
-              {/* Lean Tech Stack & Risks */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div style={{ padding: '1rem', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '0.75rem' }}>
-                  <p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Lean Tech Stack</p>
-                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.lean_tech_stack}</p>
-                </div>
-                <div style={{ padding: '1rem', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '0.75rem' }}>
-                  <p style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Critical Market Risks</p>
-                  <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.critical_risks}</p>
-                </div>
-              </div>
+              {/* Problem & Solution */}
+              <Section title="The Problem" color="#f43f5e">
+                <Body>{result.problem_statement}</Body>
+              </Section>
 
-              {/* Financial Allocation Native */}
-              <div style={{ padding: '1rem', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '0.75rem' }}>
-                <p style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '0.85rem', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Financial Allocation (Max ₹{result.budget.toLocaleString()})</p>
-                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{result.financial_allocation}</p>
-              </div>
+              <Section title="The Solution" color="#22c55e">
+                <Body>{result.solution}</Body>
+              </Section>
 
-              {/* Roadmap */}
-              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.07)', fontSize: '0.85rem' }}>
-                <p style={{ fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.5rem' }}>Tactical 30-60-90 Day Roadmap</p>
-                {result.roadmap?.map((step, i) => (
-                  <div key={i} style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-                    <span style={{color: 'var(--accent-cyan)'}}>•</span>
-                    <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }}>{step}</span>
+              {/* Indian Adaptation */}
+              {result.indian_adaptation && (
+                <Section title="Indian Market Adaptation" color="#f59e0b">
+                  <KVRow label="Distribution" value={result.indian_adaptation.distribution} />
+                  <KVRow label="Trust" value={result.indian_adaptation.trust_building} />
+                  <KVRow label="Language" value={result.indian_adaptation.language} />
+                  <KVRow label="Payment" value={result.indian_adaptation.payment} />
+                </Section>
+              )}
+
+              {/* Free Tech Stack */}
+              {result.free_tech_stack && (
+                <Section title="Free Tech Stack" color="#6366f1">
+                  {Object.entries(result.free_tech_stack).map(([k, v]) => (
+                    <KVRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={v} />
+                  ))}
+                </Section>
+              )}
+
+              {/* Financial Allocation */}
+              {result.financial_allocation && (
+                <Section title={`Financial Allocation (Max INR ${result.budget?.toLocaleString('en-IN')})`} color="#f59e0b">
+                  {result.financial_allocation.line_items ? (
+                    <>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                              <th style={{ textAlign: 'left', padding: '0.4rem 0', color: 'var(--accent-cyan)' }}>Item</th>
+                              <th style={{ textAlign: 'right', padding: '0.4rem 0', color: 'var(--accent-cyan)' }}>Cost</th>
+                              <th style={{ textAlign: 'right', padding: '0.4rem 0', color: 'var(--accent-cyan)' }}>Free Alt</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {result.financial_allocation.line_items.map((item, i) => (
+                              <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <td style={{ padding: '0.35rem 0', color: 'var(--text-secondary)' }}>{item.item}</td>
+                                <td style={{ padding: '0.35rem 0', textAlign: 'right', color: 'white', fontWeight: 600 }}>{item.cost}</td>
+                                <td style={{ padding: '0.35rem 0', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{item.free_alternative}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#22c55e', fontWeight: 700 }}>Total: {result.financial_allocation.total_spent}</span>
+                        <span style={{ color: '#f59e0b', fontWeight: 600 }}>Reserve: {result.financial_allocation.reserve}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <Body>{typeof result.financial_allocation === 'string' ? result.financial_allocation : JSON.stringify(result.financial_allocation)}</Body>
+                  )}
+                </Section>
+              )}
+
+              {/* Revenue Model */}
+              {result.revenue_model && (
+                <Section title="Revenue Model" color="#22c55e">
+                  <KVRow label="Month 1-3" value={result.revenue_model.month_1_to_3} />
+                  <KVRow label="Month 4-6" value={result.revenue_model.month_4_to_6} />
+                  <KVRow label="Year 2" value={result.revenue_model.year_2} />
+                  <KVRow label="Break-Even" value={result.revenue_model.break_even_target} />
+                </Section>
+              )}
+
+              {/* 6-Month Roadmap */}
+              {result.six_month_roadmap && (
+                <Section title="6-Month Execution Roadmap" color="#22d3ee">
+                  {result.six_month_roadmap.map((m, i) => (
+                    <div key={i} style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(34,211,238,0.06)', borderRadius: '0.5rem', border: '1px solid rgba(34,211,238,0.12)' }}>
+                      <p style={{ fontWeight: 700, color: 'var(--accent-cyan)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>{m.month} — {m.theme}</p>
+                      {m.weekly_tasks?.map((t, j) => (
+                        <p key={j} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.5rem', lineHeight: 1.5 }}>• {t}</p>
+                      ))}
+                      <p style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 600, marginTop: '0.3rem' }}>Milestone: {m.milestone}</p>
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {/* Critical Risks */}
+              {result.critical_risks && Array.isArray(result.critical_risks) && (
+                <Section title="Risk Matrix" color="#f43f5e">
+                  {result.critical_risks.map((risk, i) => (
+                    <div key={i} style={{ marginBottom: '0.6rem', padding: '0.6rem', background: 'rgba(244,63,94,0.06)', borderRadius: '0.5rem' }}>
+                      <p style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.85rem' }}>{risk.risk}</p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Probability: {risk.probability} | Impact: {risk.impact}</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{risk.mitigation}</p>
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {/* Legal & Compliance */}
+              {result.legal_and_compliance && (
+                <Section title="Legal & Compliance" color="#f59e0b">
+                  <KVRow label="Registration" value={result.legal_and_compliance.business_registration} />
+                  <KVRow label="GST" value={result.legal_and_compliance.gst_registration} />
+                  {result.legal_and_compliance.required_documents?.map((d, i) => (
+                    <p key={i} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>• {d}</p>
+                  ))}
+                  <p style={{ fontSize: '0.8rem', color: '#f43f5e', marginTop: '0.4rem', fontWeight: 600 }}>{result.legal_and_compliance.important_warnings}</p>
+                </Section>
+              )}
+
+              {/* Website Must-Haves */}
+              {result.website_must_haves && (
+                <Section title="Website Blueprint" color="#6366f1">
+                  {result.website_must_haves.map((f, i) => (
+                    <p key={i} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
+                      <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '0.4rem', color: '#22c55e' }} />{f}
+                    </p>
+                  ))}
+                </Section>
+              )}
+
+              {/* Founder Superpower */}
+              {result.founder_superpower && (
+                <Section title="Your Unfair Advantage" color="#22c55e">
+                  <Body>{result.founder_superpower}</Body>
+                </Section>
+              )}
+
+              {/* Founder Tips */}
+              {result.founder_tips && (
+                <Section title="Founder Tips" color="#8b5cf6">
+                  {result.founder_tips.map((tip, i) => (
+                    <p key={i} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.35rem', lineHeight: 1.5 }}>
+                      <span style={{ color: 'var(--accent-purple)', fontWeight: 700 }}>{i + 1}.</span> {tip}
+                    </p>
+                  ))}
+                </Section>
+              )}
+
+              {/* Honest Verdict */}
+              {result.honest_verdict && (
+                <div style={{ padding: '1.25rem', background: 'linear-gradient(135deg, rgba(244,63,94,0.08), rgba(139,92,246,0.08))', borderRadius: '0.75rem', border: '1px solid rgba(244,63,94,0.25)' }}>
+                  <p style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.85rem', marginBottom: '0.6rem', textTransform: 'uppercase' }}>Honest Verdict</p>
+                  <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '0.5rem' }}>
+                    {result.honest_verdict.viability_score}
+                  </p>
+                  <KVRow label="Best Case" value={result.honest_verdict.best_case} />
+                  <KVRow label="Worst Case" value={result.honest_verdict.worst_case} />
+                  <div style={{ marginTop: '0.5rem', padding: '0.6rem', background: 'rgba(244,63,94,0.1)', borderRadius: '0.4rem' }}>
+                    <p style={{ fontSize: '0.85rem', color: '#f43f5e', fontWeight: 700 }}>Make or Break:</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{result.honest_verdict.one_thing_that_will_make_or_break_this}</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
 
               {/* Rating */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -623,11 +764,11 @@ const AIGenerators = () => {
                   <ThumbsDown size={18} /> Retry
                 </button>
                 <button onClick={generatePDF} className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', background: 'linear-gradient(135deg, #10b981, #059669)', padding: '0.75rem' }}>
-                  <Download size={18} /> Download Startup Packet (PDF)
+                  <Download size={18} /> Download 18-Page PDF
                 </button>
               </div>
 
-              {/* Monetization / Hire CTA */}
+              {/* Hire CTA */}
               <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(34, 211, 238, 0.05)', border: '1px solid rgba(34, 211, 238, 0.3)', borderRadius: '0.5rem', textAlign: 'center' }}>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Overwhelmed by the technical requirements?</p>
                 <a 
@@ -637,7 +778,7 @@ const AIGenerators = () => {
                   className="btn" 
                   style={{ width: '100%', padding: '0.75rem', background: 'rgba(34, 211, 238, 0.1)', color: 'var(--accent-cyan)', border: '1px solid rgba(34, 211, 238, 0.2)', fontSize: '0.95rem' }}
                 >
-                  Hire Our Code Team (Starting at ₹1000)
+                  Hire Our Code Team (Starting at INR 1000)
                 </a>
               </div>
             </div>
