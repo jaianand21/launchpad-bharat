@@ -212,6 +212,12 @@ const AIGenerators = () => {
   const resultRef = useRef(null);
   const chatBottomRef = useRef(null);
 
+  // Warm-up ping: wake the Render backend on page load to avoid cold-start timeout
+  useEffect(() => {
+    const apiBase = import.meta.env.VITE_API_URL || 'https://launchpad-bharat-backend.onrender.com';
+    fetch(`${apiBase}/health`).catch(() => {}); // Silent — just wakes up the server
+  }, []);
+
   // Initial load logic for Scroll to top + URL Cart logic
   useEffect(() => {
     window.scrollTo(0, 0);
