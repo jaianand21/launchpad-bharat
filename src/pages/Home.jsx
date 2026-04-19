@@ -40,9 +40,9 @@ const Home = () => {
   const firstName = user?.name?.split(' ')[0] || 'Founder';
 
   const [liveData, setLiveData] = useState({
-    blueprints: 1247,
-    founders: 3840,
-    resources: 56,
+    blueprints: 0,
+    founders: 0,
+    resources: 0,
     latestFounder: null,
     latestBlueprintUser: null
   });
