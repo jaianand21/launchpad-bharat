@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, Sparkles, BookOpen, CheckCircle, Calculator,
-  TrendingUp, Users, FileText, Star, ChevronDown, Check, Send
+  TrendingUp, Users, FileText, Star, ChevronDown, Check, Send, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
