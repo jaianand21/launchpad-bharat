@@ -13,9 +13,21 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  const saveVisitor = (visitorData) => {
+  const saveVisitor = async (visitorData) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(visitorData));
     setUser(visitorData);
+    
+    // Sync join to live feed
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await fetch(`${apiUrl}/api/stats/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: visitorData.name })
+      });
+    } catch (err) {
+      console.error('[Sync] Failed to record join:', err.message);
+    }
   };
 
   const clearVisitor = () => {
