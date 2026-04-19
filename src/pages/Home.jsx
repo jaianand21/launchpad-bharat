@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, Sparkles, BookOpen, CheckCircle, Calculator,
@@ -9,11 +9,19 @@ import { useAuth } from '../context/AuthContext';
 // ── Animated counter hook ─────────────────────────────────────────────────────
 const useCounter = (end, duration = 2000) => {
   const [count, setCount] = useState(0);
+  const currentRef = useRef(0);
   useEffect(() => {
-    let start = 0; const step = end / (duration / 16);
+    const diff = end - currentRef.current;
+    if (diff === 0) return;
+    const steps = duration / 16;
+    const step = diff / steps;
     const t = setInterval(() => {
-      start += step; if (start >= end) { setCount(end); clearInterval(t); }
-      else setCount(Math.floor(start));
+      currentRef.current += step;
+      if ((step > 0 && currentRef.current >= end) || (step < 0 && currentRef.current <= end)) {
+        currentRef.current = end;
+        clearInterval(t);
+      }
+      setCount(Math.floor(currentRef.current));
     }, 16);
     return () => clearInterval(t);
   }, [end, duration]);
@@ -31,9 +39,32 @@ const Home = () => {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] || 'Founder';
 
-  const blueprints = useCounter(1247);
-  const founders   = useCounter(3840);
-  const resources  = useCounter(56);
+  const [liveData, setLiveData] = useState({
+    blueprints: 1247,
+    founders: 3840,
+    resources: 56,
+    latestFounder: null,
+    latestBlueprintUser: null
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/stats`);
+        if (res.ok) {
+          const data = await res.json();
+          setLiveData(prev => ({...prev, ...data}));
+        }
+      } catch (err) {}
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 10000); // Live poll every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const blueprints = useCounter(liveData.blueprints);
+  const founders   = useCounter(liveData.founders);
+  const resources  = useCounter(liveData.resources);
 
   // Youtube Video Background Configuration
   // Edit this VIDEO ID below to supply the specific youtube background you want. 
@@ -95,14 +126,28 @@ const Home = () => {
       <section style={{ marginTop: '4rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
           {[
-            { icon: <FileText size={22} style={{ color: 'var(--accent-cyan)' }} />, value: blueprints.toLocaleString('en-IN') + '+', label: 'Blueprints Generated' },
-            { icon: <Users size={22} style={{ color: 'var(--accent-purple)' }} />, value: founders.toLocaleString('en-IN') + '+', label: 'Founders Joined' },
-            { icon: <BookOpen size={22} style={{ color: '#22c55e' }} />, value: resources + '+', label: 'Free Resources' },
+            { icon: <FileText size={22} style={{ color: 'var(--accent-cyan)' }} />, value: blueprints.toLocaleString('en-IN') + '+', label: 'Blueprints Generated', latest: liveData.latestBlueprintUser, liveColor: 'var(--accent-cyan)', labelPrefix: 'Gen' },
+            { icon: <Users size={22} style={{ color: 'var(--accent-purple)' }} />, value: founders.toLocaleString('en-IN') + '+', label: 'Founders Joined', latest: liveData.latestFounder, liveColor: 'var(--accent-purple)', labelPrefix: 'Join' },
+            { icon: <BookOpen size={22} style={{ color: '#22c55e' }} />, value: resources + '+', label: 'Free Resources', latest: null, liveColor: null },
           ].map((s, i) => (
-            <div key={i} className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+            <div key={i} className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem', position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>{s.icon}</div>
+              {/* Live Signal */}
+              {s.latest && (
+                <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.65rem', color: s.liveColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Live</span>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.liveColor, boxShadow: `0 0 8px ${s.liveColor}` }} className="animate-pulse-glow"></span>
+                </div>
+              )}
               <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'white' }}>{s.value}</p>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>{s.label}</p>
+              
+              {/* Latest Name Badge */}
+              {s.latest && (
+                <div style={{ marginTop: '0.85rem', fontSize: '0.75rem', color: s.liveColor, background: `${s.liveColor}15`, border: `1px solid ${s.liveColor}30`, padding: '0.3rem 0.65rem', borderRadius: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🚀</span> {s.latest} {s.labelPrefix === 'Gen' ? 'Generated' : 'Joined'}
+                </div>
+              )}
             </div>
           ))}
         </div>
