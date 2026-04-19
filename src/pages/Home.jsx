@@ -36,22 +36,23 @@ const Home = () => {
   const resources  = useCounter(56);
 
   // Youtube Video Background Configuration
-  // Edit this VIDEO ID below to supply the specific youtube background you want. 
-  // It is currently set to a generic dark abstract tech video loop.
-  const backgroundVideoId = "P90X9xxm1gc";
+  // Plays automatically only for users who are not logged in.
+  const backgroundVideoId = "JeyrTrVahyw";
 
   return (
     <>
       {/* ── Background Video Layer ────────────────────────────────────────────────────────── */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', overflow: 'hidden', opacity: 0.4 }}>
-        <iframe 
-          src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&mute=1&loop=1&playlist=${backgroundVideoId}&controls=0&showinfo=0&rel=0`}
-          frameBorder="0"
-          allow="autoplay; encrypted-media"
-          style={{ width: '100vw', height: '56.25vw', minHeight: '100vh', minWidth: '177.77vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}
-          title="Background Video"
-        ></iframe>
-      </div>
+      {!user && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', overflow: 'hidden', opacity: 0.4 }}>
+          <iframe 
+            src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&mute=1&loop=1&playlist=${backgroundVideoId}&controls=0&showinfo=0&rel=0`}
+            frameBorder="0"
+            allow="autoplay; encrypted-media"
+            style={{ width: '100vw', height: '56.25vw', minHeight: '100vh', minWidth: '177.77vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}
+            title="Background Video"
+          ></iframe>
+        </div>
+      )}
 
       {/* Main Home Content Container */}
       <div className="container py-20" style={{ position: 'relative', zIndex: 1 }}>
