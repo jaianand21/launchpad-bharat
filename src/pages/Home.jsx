@@ -126,8 +126,8 @@ const Home = () => {
       <section style={{ marginTop: '4rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
           {[
-            { icon: <FileText size={22} style={{ color: 'var(--accent-cyan)' }} />, value: blueprints.toLocaleString('en-IN') + '+', label: 'Blueprints Generated', latest: liveData.latestBlueprintUser, liveColor: 'var(--accent-cyan)', labelPrefix: 'Gen' },
-            { icon: <Users size={22} style={{ color: 'var(--accent-purple)' }} />, value: founders.toLocaleString('en-IN') + '+', label: 'Founders Joined', latest: liveData.latestFounder, liveColor: 'var(--accent-purple)', labelPrefix: 'Join' },
+            { icon: <FileText size={22} style={{ color: 'var(--accent-cyan)' }} />, value: blueprints.toLocaleString('en-IN'), label: 'Blueprints Generated', latest: liveData.latestBlueprintUser, liveColor: 'var(--accent-cyan)', labelPrefix: 'Gen' },
+            { icon: <Users size={22} style={{ color: 'var(--accent-purple)' }} />, value: founders.toLocaleString('en-IN'), label: 'Founders Joined', latest: liveData.latestFounder, liveColor: 'var(--accent-purple)', labelPrefix: 'Join' },
             { icon: <BookOpen size={22} style={{ color: '#22c55e' }} />, value: resources + '+', label: 'Free Resources', latest: null, liveColor: null },
           ].map((s, i) => (
             <div key={i} className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem', position: 'relative' }}>
