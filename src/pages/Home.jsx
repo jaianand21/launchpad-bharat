@@ -35,8 +35,28 @@ const Home = () => {
   const founders   = useCounter(3840);
   const resources  = useCounter(56);
 
+  // Youtube Video Background Configuration
+  // Edit this VIDEO ID below to supply the specific youtube background you want. 
+  // It is currently set to a generic dark abstract tech video loop.
+  const backgroundVideoId = "P90X9xxm1gc";
+
   return (
-    <div className="container py-20">
+    <>
+      {/* ── Background Video Layer ────────────────────────────────────────────────────────── */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', overflow: 'hidden', opacity: 0.25 }}>
+        <iframe 
+          src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&mute=1&loop=1&playlist=${backgroundVideoId}&controls=0&showinfo=0&rel=0`}
+          frameBorder="0"
+          allow="autoplay; encrypted-media"
+          style={{ width: '100vw', height: '56.25vw', minHeight: '100vh', minWidth: '177.77vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}
+          title="Background Video"
+        ></iframe>
+        {/* Gradient overlay to seamlessly fade video into bottom content and remain dark */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to bottom, rgba(10,14,23,0.6) 0%, rgba(10,14,23,0.95) 80%, #0a0e17 100%)' }}></div>
+      </div>
+
+      {/* Main Home Content Container */}
+      <div className="container py-20" style={{ position: 'relative', zIndex: 1 }}>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -257,7 +277,8 @@ const Home = () => {
           </a>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 
