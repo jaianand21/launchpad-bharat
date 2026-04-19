@@ -143,6 +143,8 @@ const AIGenerators = () => {
     const skillsStr = selectedSkills.map(s => s.label).join(', ');
     const nichesStr = selectedNiches.map(n => n.label).join(', ');
 
+    const { user } = useAuth();
+
     try {
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiBase}/api/generate-blueprint`, {
@@ -151,7 +153,8 @@ const AIGenerators = () => {
         body: JSON.stringify({
           skills: skillsStr,
           niches: nichesStr,
-          budget: budget
+          budget: budget,
+          userName: user?.name || 'Anonymous Founder'
         })
       });
 
