@@ -43,14 +43,18 @@ const Home = () => {
   return (
     <>
       {/* ── Background Video Layer ────────────────────────────────────────────────────────── */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', overflow: 'hidden', opacity: 0.4 }}>
-        <iframe 
-          src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&mute=1&loop=1&playlist=${backgroundVideoId}&controls=0&showinfo=0&rel=0`}
-          frameBorder="0"
-          allow="autoplay; encrypted-media"
-          style={{ width: '100vw', height: '56.25vw', minHeight: '100vh', minWidth: '177.77vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}
-          title="Background Video"
-        ></iframe>
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '120vh', zIndex: -1, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ opacity: 0.4, width: '100%', height: '100%', position: 'relative' }}>
+          <iframe 
+            src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&mute=1&loop=1&playlist=${backgroundVideoId}&controls=0&showinfo=0&rel=0`}
+            frameBorder="0"
+            allow="autoplay; encrypted-media"
+            style={{ width: '100vw', height: '56.25vw', minHeight: '120vh', minWidth: '213.33vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}
+            title="Background Video"
+          ></iframe>
+        </div>
+        {/* Gradient at the very bottom to smoothly fade into the dark theme of the website below */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40vh', background: 'linear-gradient(to bottom, transparent 0%, #0b0f19 100%)' }}></div>
       </div>
 
       {/* Main Home Content Container */}
