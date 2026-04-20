@@ -139,7 +139,7 @@ const Leadership = () => {
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-10 max-w-2xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto w-full">
           {founders.map((founder, index) => (
             <TiltCard key={index} founder={founder} />
           ))}
