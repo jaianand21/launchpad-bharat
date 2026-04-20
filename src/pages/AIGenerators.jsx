@@ -784,6 +784,28 @@ const AIGenerators = () => {
                 </button>
               </div>
 
+
+              {/* Trust Section: Meet the Founders */}
+              <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-purple)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '1rem', textAlign: 'center' }}>
+                  A Blueprint Built By Practitioners
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {/* Jai Anand */}
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(34, 211, 238, 0.1)', textAlign: 'center' }}>
+                    <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(59,130,246,0.1))', borderRadius: '50%', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '1px solid rgba(34, 211, 238, 0.3)' }}>👨‍💻</div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', marginBottom: '0.1rem' }}>Jai Anand</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)', fontWeight: 600, textTransform: 'uppercase' }}>Founder & CEO</p>
+                  </div>
+                  {/* Abhay Bansal */}
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(168, 85, 247, 0.1)', textAlign: 'center' }}>
+                    <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.1))', borderRadius: '50%', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '1px solid rgba(168, 85, 247, 0.3)' }}>🚀</div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', marginBottom: '0.1rem' }}>Abhay Bansal</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--accent-purple)', fontWeight: 600, textTransform: 'uppercase' }}>Co-Founder</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Hire CTA */}
               <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(34, 211, 238, 0.05)', border: '1px solid rgba(34, 211, 238, 0.3)', borderRadius: '0.5rem', textAlign: 'center' }}>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Overwhelmed by the technical requirements?</p>
