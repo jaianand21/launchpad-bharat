@@ -93,6 +93,7 @@ const AIGenerators = () => {
   
   const resultRef = useRef(null);
   const chatBottomRef = useRef(null);
+  const chatMountedRef = useRef(false); // prevents auto-scroll on first load
 
   // Warm-up ping: wake the Render backend on page load to avoid cold-start timeout
   useEffect(() => {
@@ -110,6 +111,11 @@ const AIGenerators = () => {
   }, [searchParams, savedBlueprints.length, setSearchParams]);
 
   useEffect(() => {
+    // Skip first render — only scroll chat when new messages are added
+    if (!chatMountedRef.current) {
+      chatMountedRef.current = true;
+      return;
+    }
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
@@ -178,9 +184,9 @@ const AIGenerators = () => {
       alert('Error: ' + err.message);
     } finally {
       setLoading(false);
-      // Instant scroll to results as requested
-      if (resultRef.current) {
-        resultRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+      // Scroll to result only after blueprint is generated (not on page load)
+      if (resultRef.current && result !== null) {
+        resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
   };
