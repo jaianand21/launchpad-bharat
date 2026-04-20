@@ -173,13 +173,13 @@ const AIGenerators = () => {
       };
 
       setResult(finalResult);
-      // Scroll to result
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     } catch (err) {
       console.error('[GENERATE] Error:', err.message);
       alert('Error: ' + err.message);
     } finally {
       setLoading(false);
+      // Explicitly scroll to the results at the very end to ensure it's rendered
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     }
   };
 
@@ -192,14 +192,16 @@ const AIGenerators = () => {
     alert(`"${result.startup_name}" saved to your Saved Blueprints!`);
   };
 
-  const handleDislike = () => {
+  const handleDislike = (e) => {
+    if (e) e.preventDefault();
     if (!result) return;
     const newRejected = [...rejectedNames, result.startup_name];
     setRejectedNames(newRejected);
     runGenerate(newRejected);
   };
 
-  const generateFromChat = () => {
+  const generateFromChat = (e) => {
+    if (e) e.preventDefault();
     if (!budget) setBudget('15000');
     if (selectedNiches.length === 0) setSelectedNiches([{ label: 'E-commerce', value: 'E-commerce' }]);
     if (selectedSkills.length === 0) setSelectedSkills([{ label: 'Web Development', value: 'Web Development' }]);
@@ -550,7 +552,7 @@ const AIGenerators = () => {
               style={{ flex: 1, padding: '0.85rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.3)', color: 'white', outline: 'none', fontSize: '0.9rem' }} />
             <button type="submit" className="btn" style={{ padding: '0 1.25rem', background: 'var(--accent-cyan)', color: 'black', fontWeight: 700 }}>→</button>
           </form>
-          <button onClick={generateFromChat} className="btn btn-primary" style={{ width: '100%', padding: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={(e) => generateFromChat(e)} className="btn btn-primary" style={{ width: '100%', padding: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
             <Wand2 size={18} /> Generate Blueprint from Chat
           </button>
         </div>
