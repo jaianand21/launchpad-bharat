@@ -187,7 +187,7 @@ const Footer = () => (
             © {new Date().getFullYear()} Launchpad Bharat. All rights reserved.
           </p>
           <p style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: 600, marginTop: '0.5rem' }}>
-            Built with ❤️ by <span style={{ color: 'white' }}>Jai Anand</span> (Founder & CEO)
+            Built with ❤️ by <span style={{ color: 'white' }}>Jai Anand</span> (Founder & CEO) & <span style={{ color: 'white' }}>Abhay Bansal</span> (Co-Founder)
           </p>
         </div>
       </div>

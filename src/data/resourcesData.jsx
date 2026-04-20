@@ -1,5 +1,9 @@
 import React from 'react';
-import { ExternalLink, FileText, Calculator, ArrowRight, ShieldCheck, CheckSquare, BookOpen, DollarSign } from 'lucide-react';
+import { 
+  ExternalLink, FileText, Calculator, ArrowRight, ShieldCheck, CheckSquare, 
+  BookOpen, DollarSign, TrendingUp, Users, Calendar, Search, Mail, 
+  Activity, Zap, Globe, Share2, MessageSquare, BarChart2, PieChart, Settings 
+} from 'lucide-react';
 
 export const INTENTS = [
   "All Needs",
@@ -130,5 +134,24 @@ export const RESOURCES = [
   { id: 92, title: "CEO Mental Models", desc: "Delete cognitive bottlenecks and make violently fast operational decisions.", intent: "Raise & Scale", stage: "Scale", companyType: "All Types", priority: "Advanced", timeToUse: "1 Day", mostUsed: false, icon: <BookOpen size={24} /> },
   { id: 93, title: "ICE Scoring Matrices", desc: "Prioritize product pipelines mechanically based solely on mathematical impact.", intent: "Grow Your Startup", stage: "MVP", companyType: "Tech", priority: "Advanced", timeToUse: "2 Hours", mostUsed: false, icon: <BookOpen size={24} /> },
   { id: 94, title: "Indian Startup Post-Mortems", desc: "Study the exact reasons uniquely Indian startups blow up internally.", intent: "Start a Startup", stage: "Idea", companyType: "All Types", priority: "Critical", timeToUse: "3 Hours", mostUsed: true, icon: <BookOpen size={24} /> },
-  { id: 95, title: "Lethal Legal Blunders", desc: "Avoid the five exact mistakes founders make that kill acquisitions instantly.", intent: "Stay Compliant", stage: "Idea", companyType: "All Types", priority: "Critical", timeToUse: "1 Hour", mostUsed: true, icon: <BookOpen size={24} /> }
+  { id: 95, title: "Lethal Legal Blunders", desc: "Avoid the five exact mistakes founders make that kill acquisitions instantly.", intent: "Stay Compliant", stage: "Idea", companyType: "All Types", priority: "Critical", timeToUse: "1 Hour", mostUsed: true, icon: <BookOpen size={24} /> },
+
+  // 🚀 GROW YOUR STARTUP - 17 GROWTH RESOURCES
+  { id: 150, title: "Viral Loops Strategy", desc: "Design mechanisms that force existing users to invite new ones automatically.", intent: "Grow Your Startup", stage: "MVP", companyType: "Tech", priority: "Critical", timeToUse: "1 Week", mostUsed: true, icon: <TrendingUp size={24} /> },
+  { id: 151, title: "Customer Retention Framework", desc: "Patch your leaky bucket and stop burning cash on user churn.", intent: "Grow Your Startup", stage: "Revenue", companyType: "All Types", priority: "Critical", timeToUse: "1 Week", mostUsed: true, icon: <Users size={24} /> },
+  { id: 152, title: "Social Media Content Calendar", desc: "Organize your tactical attention-farming across platforms predictably.", intent: "Grow Your Startup", stage: "MVP", companyType: "All Types", priority: "Beginner", timeToUse: "4 Hours", mostUsed: false, icon: <Calendar size={24} /> },
+  { id: 153, title: "Influencer Marketing Tracker", desc: "Manage partnerships with high-leverage creators without getting scammed.", intent: "Grow Your Startup", stage: "Revenue", companyType: "D2C", priority: "Advanced", timeToUse: "2 Days", mostUsed: false, icon: <Users size={24} /> },
+  { id: 154, title: "SEO Optimization Checklist", desc: "Tactical tasks to push your pages to the top of Google results.", intent: "Grow Your Startup", stage: "MVP", companyType: "Tech", priority: "Beginner", timeToUse: "3 Hours", mostUsed: true, icon: <Search size={24} /> },
+  { id: 155, title: "Paid Ads Performance Tracker", desc: "Monitor your CPA and ROAS daily to kill expensive campaigns fast.", intent: "Grow Your Startup", stage: "Revenue", companyType: "D2C", priority: "Critical", timeToUse: "1 Day", mostUsed: true, icon: <DollarSign size={24} /> },
+  { id: 156, title: "A/B Testing Experiments Log", desc: "Systematically record what converts and why to stop guessing.", intent: "Grow Your Startup", stage: "MVP", companyType: "Tech", priority: "Advanced", timeToUse: "2 Days", mostUsed: false, icon: <Activity size={24} /> },
+  { id: 157, title: "Email Marketing Automation", desc: "Set up behavioral triggers that sell to users while you sleep.", intent: "Grow Your Startup", stage: "Revenue", companyType: "All Types", priority: "Advanced", timeToUse: "4 Days", mostUsed: false, icon: <Mail size={24} /> },
+  { id: 158, title: "Sales Script & Objection Handling", desc: "The exact words to use to destroy common enterprise gatekeeper objections.", intent: "Grow Your Startup", stage: "Revenue", companyType: "Service", priority: "Critical", timeToUse: "1 Week", mostUsed: true, icon: <MessageSquare size={24} /> },
+  { id: 159, title: "Referral Program Blueprint", desc: "Incentivize your current fans to build your sales team for free.", intent: "Grow Your Startup", stage: "Revenue", companyType: "D2C", priority: "Advanced", timeToUse: "2 Days", mostUsed: false, icon: <Share2 size={24} /> },
+  { id: 160, title: "PR & Media Outreach Kit", desc: "Get featured in top publications using scripts that journalists actually answer.", intent: "Grow Your Startup", stage: "Scale", companyType: "All Types", priority: "Advanced", timeToUse: "1 Week", mostUsed: false, icon: <Globe size={24} /> },
+  { id: 161, title: "Partnership & Affiliate Guide", desc: "Unlock other people's audiences safely and legally.", intent: "Grow Your Startup", stage: "Revenue", companyType: "All Types", priority: "Beginner", timeToUse: "4 Hours", mostUsed: false, icon: <Zap size={24} /> },
+  { id: 162, title: "Community Building Playbook", desc: "Turn users into a cult-like following that defends your brand.", intent: "Grow Your Startup", stage: "MVP", companyType: "All Types", priority: "Critical", timeToUse: "2 Weeks", mostUsed: true, icon: <Users size={24} /> },
+  { id: 163, title: "Product Analytics Setup", desc: "The exact events you must track to understand user frustration.", intent: "Grow Your Startup", stage: "MVP", companyType: "Tech", priority: "Beginner", timeToUse: "1 Day", mostUsed: false, icon: <BarChart2 size={24} /> },
+  { id: 164, title: "Competitive Intelligence Report", desc: "Ethically spy on your rivals to find their marketing weaknesses.", intent: "Grow Your Startup", stage: "Idea", companyType: "All Types", priority: "Advanced", timeToUse: "2 Days", mostUsed: false, icon: <PieChart size={24} /> },
+  { id: 165, title: "Scaling Ops & SOPs", desc: "Document everything so you can stop doing it yourself and hire.", intent: "Grow Your Startup", stage: "Scale", companyType: "All Types", priority: "Critical", timeToUse: "2 Weeks", mostUsed: true, icon: <Settings size={24} /> },
+  { id: 166, title: "International Expansion Matrix", desc: "Decide which country to conquer next based on data, not vanity.", intent: "Grow Your Startup", stage: "Scale", companyType: "Tech", priority: "Advanced", timeToUse: "1 Week", mostUsed: false, icon: <Globe size={24} /> }
 ];

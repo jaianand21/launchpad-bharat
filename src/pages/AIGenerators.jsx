@@ -160,7 +160,8 @@ const AIGenerators = () => {
           niches: nichesStr,
           budget: budget,
           userName: user?.name || 'Anonymous Founder',
-          userEmail: user?.email || 'N/A'
+          userEmail: user?.email || 'N/A',
+          userId: user?.id || null
         })
       });
 
@@ -280,13 +281,13 @@ const AIGenerators = () => {
       doc.text('Inspired by: ' + safe(r.foreign_inspiration.company) + ' (' + safe(r.foreign_inspiration.country) + ')', M, curY);
     }
 
-    // PAGE 2: THE PROBLEM
+    // THE PROBLEM
     doc.addPage(); y = 30;
     hdg('1. THE PROBLEM');
     bdy(r.problem_statement || '', 11);
 
-    // PAGE 3: THE SOLUTION + INDIAN ADAPTATION
-    doc.addPage(); y = 30;
+    // THE SOLUTION + INDIAN ADAPTATION
+    y += 10; chk(40);
     hdg('2. THE SOLUTION');
     bdy(r.solution || '', 11);
     
@@ -299,9 +300,9 @@ const AIGenerators = () => {
       bdy('Payment Strategy: ' + (r.indian_adaptation.payment || ''), 10);
     }
 
-    // PAGE 4: REVENUE MODEL
+    // REVENUE MODEL
     if (r.revenue_model) {
-      doc.addPage(); y = 30;
+      y += 10; chk(50);
       hdg('4. BUSINESS & REVENUE MODEL', [34, 197, 94]);
       bdy('Months 1-3: ' + (r.revenue_model.month_1_to_3 || ''), 10);
       bdy('Months 4-6: ' + (r.revenue_model.month_4_to_6 || ''), 10);
@@ -309,9 +310,9 @@ const AIGenerators = () => {
       bdy('Break-Even Target: ' + (r.revenue_model.break_even_target || ''), 10, true, [34, 197, 94]);
     }
 
-    // PAGE 5: FREE TECH STACK
+    // FREE TECH STACK
     if (r.free_tech_stack) {
-      doc.addPage(); y = 30;
+      y += 10; chk(60);
       hdg('5. FREE TECH STACK', [99, 102, 241]);
       const stack = r.free_tech_stack;
       Object.entries(stack).forEach(([key, val]) => {
@@ -319,8 +320,8 @@ const AIGenerators = () => {
       });
     }
 
-    // PAGE 6: FINANCIAL BREAKDOWN
-    doc.addPage(); y = 30;
+    // FINANCIAL BREAKDOWN
+    y += 10; chk(60);
     hdg('6. FINANCIAL BREAKDOWN (MAX INR ' + (r.budget || 0).toLocaleString('en-IN') + ')', [245, 158, 11]);
     if (r.financial_allocation?.line_items) {
       // Table header
@@ -345,10 +346,12 @@ const AIGenerators = () => {
       bdy(r.financial_allocation, 10);
     }
 
-    // PAGES 7-12: 6-MONTH ROADMAP
+    // 6-MONTH ROADMAP
     if (r.six_month_roadmap) {
+      doc.addPage(); y = 30;
+      hdg('7. 6-MONTH EXECUTION ROADMAP', [34, 211, 238]);
       r.six_month_roadmap.forEach((m) => {
-        doc.addPage(); y = 30;
+        y += 5; chk(50);
         hdg(m.month + ' — ' + (m.theme || ''), [34, 211, 238]);
         if (m.weekly_tasks) {
           m.weekly_tasks.forEach(task => {
@@ -360,9 +363,9 @@ const AIGenerators = () => {
       });
     }
 
-    // PAGE 13: RISK MATRIX
+    // RISK MATRIX
     if (r.critical_risks && Array.isArray(r.critical_risks)) {
-      doc.addPage(); y = 30;
+      y += 10; chk(60);
       hdg('RISK MATRIX', [244, 63, 94]);
       r.critical_risks.forEach((risk, i) => {
         chk(30);
@@ -373,9 +376,9 @@ const AIGenerators = () => {
       });
     }
 
-    // PAGE 14: LEGAL & COMPLIANCE
+    // LEGAL & COMPLIANCE
     if (r.legal_and_compliance) {
-      doc.addPage(); y = 30;
+      y += 10; chk(60);
       hdg('LEGAL & COMPLIANCE', [245, 158, 11]);
       bdy('Business Registration: ' + (r.legal_and_compliance.business_registration || ''), 10);
       bdy('GST Registration: ' + (r.legal_and_compliance.gst_registration || ''), 10);
@@ -386,15 +389,15 @@ const AIGenerators = () => {
       bdy('Warnings: ' + (r.legal_and_compliance.important_warnings || ''), 10, false, [244, 63, 94]);
     }
 
-    // PAGE 15: WEBSITE MUST-HAVES
+    // WEBSITE MUST-HAVES
     if (r.website_must_haves) {
-      doc.addPage(); y = 30;
+      y += 10; chk(50);
       hdg('WEBSITE BLUEPRINT', [99, 102, 241]);
       r.website_must_haves.forEach((f, i) => bdy(`${i + 1}. ${f}`, 10));
     }
 
-    // PAGE 16: FOUNDER SUPERPOWER + TIPS
-    doc.addPage(); y = 30;
+    // FOUNDER SUPERPOWER + TIPS
+    y += 10; chk(40);
     hdg("FOUNDER'S EDGE", [34, 197, 94]);
     bdy(r.founder_superpower || '', 11);
     if (r.founder_tips) {
@@ -403,9 +406,9 @@ const AIGenerators = () => {
       r.founder_tips.forEach((tip, i) => bdy(`${i + 1}. ${tip}`, 10));
     }
 
-    // PAGE 17: HONEST VERDICT
+    // HONEST VERDICT
     if (r.honest_verdict) {
-      doc.addPage(); y = 30;
+      y += 10; chk(60);
       hdg('HONEST VERDICT', [244, 63, 94]);
       bdy('Viability Score: ' + (r.honest_verdict.viability_score || ''), 14, true, [34, 211, 238]);
       y += 3;
@@ -456,7 +459,7 @@ const AIGenerators = () => {
       <div className="text-center mb-8">
         <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Advanced <span className="text-accent">Startup Builder</span></h1>
         <p className="text-secondary" style={{ fontSize: '1.1rem', maxWidth: '800px', margin: '0 auto' }}>
-          Welcome, {userName}. This tool gives you a <strong>brutally honest</strong> 18-page blueprint — real costs, real risks, real feasibility.
+          Welcome, {userName}. This tool gives you a <strong>brutally honest</strong> Detailed Blueprint — real costs, real risks, real feasibility.
         </p>
       </div>
 
@@ -579,7 +582,7 @@ const AIGenerators = () => {
           {loading && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: 50, height: 50, border: '4px solid var(--accent-purple)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-              <p style={{ marginTop: '1rem' }}>AI is building your 18-page blueprint...</p>
+              <p style={{ marginTop: '1rem' }}>AI is building your Detailed Blueprint...</p>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Analyzing market, risks, legal, and financials...</p>
             </div>
           )}
@@ -777,7 +780,7 @@ const AIGenerators = () => {
                   <ThumbsDown size={18} /> Retry
                 </button>
                 <button onClick={generatePDF} className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', background: 'linear-gradient(135deg, #10b981, #059669)', padding: '0.75rem' }}>
-                  <Download size={18} /> Download 18-Page PDF
+                  <Download size={18} /> Download Detailed PDF
                 </button>
               </div>
 

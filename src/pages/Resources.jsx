@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, FileText, Search, Calculator, ArrowRight, ShieldCheck, CheckSquare, BookOpen, DollarSign, Eye, X, Download, Star, Zap, AlertTriangle } from 'lucide-react';
+import { ExternalLink, FileText, Search, Calculator, ArrowRight, ShieldCheck, CheckSquare, BookOpen, DollarSign, Eye, X, Download, Star, Zap, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { jsPDF } from 'jspdf';
@@ -21,6 +21,7 @@ const Resources = () => {
   const mostUsedResources = RESOURCES.filter(r => r.mostUsed).slice(0, 3);
   const quickStartPack = RESOURCES.filter(r => r.priority === "Beginner" && r.intent === "Start a Startup").slice(0, 3);
   const costlyMistakes = RESOURCES.filter(r => r.intent === "Stay Compliant" && r.priority === "Critical").slice(0, 3);
+  const growthMasteryBundle = RESOURCES.filter(r => r.intent === "Grow Your Startup" && r.priority === "Critical").slice(0, 3);
 
   const filteredResources = RESOURCES.filter(res => {
     const matchesSearch = res.title.toLowerCase().includes(searchTerm.toLowerCase()) || res.desc.toLowerCase().includes(searchTerm.toLowerCase());
@@ -271,6 +272,18 @@ const Resources = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mostUsedResources.map(renderResourceCard)}
+            </div>
+          </div>
+        )}
+
+        {/* Growth Mastery Section */}
+        {growthMasteryBundle.length > 0 && (
+          <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1.5rem', borderRadius: '1rem' }}>
+            <h3 className="flex items-center" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#10b981', fontWeight: 600 }}>
+              <TrendingUp className="mr-2" size={24} /> Growth Mastery Bundle (Scale Rapidly)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {growthMasteryBundle.map(renderResourceCard)}
             </div>
           </div>
         )}
