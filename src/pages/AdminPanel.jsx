@@ -9,7 +9,8 @@ const AdminPanel = () => {
   const [stats, setStats] = useState({ totalDocs: 0, latestCheck: 'N/A' });
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/documents')
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    fetch(`${apiUrl}/api/documents`)
       .then(res => res.json())
       .then(data => {
         setStats({
@@ -24,7 +25,8 @@ const AdminPanel = () => {
     setLoading(true);
     setSuccessMsg('');
     try {
-      const res = await fetch('http://localhost:5000/api/documents/sync', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/documents/sync`, {
         method: 'POST'
       });
       const data = await res.json();

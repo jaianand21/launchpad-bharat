@@ -143,7 +143,6 @@ const AIGenerators = () => {
     const skillsStr = selectedSkills.map(s => s.label).join(', ');
     const nichesStr = selectedNiches.map(n => n.label).join(', ');
 
-    const { user } = useAuth();
 
     try {
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -154,7 +153,8 @@ const AIGenerators = () => {
           skills: skillsStr,
           niches: nichesStr,
           budget: budget,
-          userName: user?.name || 'Anonymous Founder'
+          userName: user?.name || 'Anonymous Founder',
+          userEmail: user?.email || 'N/A'
         })
       });
 
