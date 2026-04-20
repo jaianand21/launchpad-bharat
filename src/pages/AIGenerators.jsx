@@ -178,8 +178,10 @@ const AIGenerators = () => {
       alert('Error: ' + err.message);
     } finally {
       setLoading(false);
-      // Explicitly scroll to the results at the very end to ensure it's rendered
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+      // Instant scroll to results as requested
+      if (resultRef.current) {
+        resultRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
     }
   };
 

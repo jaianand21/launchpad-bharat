@@ -5,6 +5,7 @@ import {
   TrendingUp, Users, FileText, Star, Zap, Shield, Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Leadership from '../components/Leadership';
 
 // ── Animated counter hook ─────────────────────────────────────────────────────
 const useCounter = (end, duration = 2000) => {
@@ -290,26 +291,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── Meet the Founder ───────────────────────────────────────────── */}
-      <section style={{ marginTop: '5rem', textAlign: 'center' }}>
-        <div style={{ padding: '3rem', background: 'rgba(255,255,255,0.03)', borderRadius: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <p style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700, marginBottom: '1rem' }}>Leadership</p>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Meet the <span className="text-accent">Founder</span></h2>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-            <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))', padding: '4px' }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>👨‍💻</div>
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0', color: 'white' }}>Jai Anand</h3>
-              <p style={{ fontSize: '1.1rem', color: 'var(--accent-cyan)', fontWeight: 600, margin: 0 }}>Founder, CEO & Lead Developer</p>
-              <p className="text-secondary" style={{ maxWidth: '600px', margin: '1.5rem auto 0', lineHeight: 1.7 }}>
-                "Launchpad Bharat was born out of a simple vision: To democratize startup building for every Indian creator. 
-                Whether you're in a metro or a tier-3 city, budget should never stop a great idea. We build the tools, you build the future."
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── Meet the Founders ───────────────────────────────────────────── */}
+      <Leadership />
 
       {/* ── Community CTA ─────────────────────────────────────────────────── */}
       <section style={{ marginTop: '4rem', paddingBottom: '4rem' }}>
