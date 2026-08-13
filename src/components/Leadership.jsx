@@ -199,17 +199,6 @@ const Leadership = () => {
       badgeBg: 'rgba(6,182,212,0.08)',
       borderGlow: 'linear-gradient(135deg, #06b6d422, #3b82f611)',
     },
-    {
-      emoji: '🚀',
-      name: 'Abhay Bansal',
-      role: 'Co-Founder & Head of Strategy',
-      quote:
-        "We combine technical excellence with strategic vision to empower India's next generation of entrepreneurs. Together, we make success accessible to every dreamer.",
-      accentColor: '#c084fc',
-      avatarBg: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.1))',
-      badgeBg: 'rgba(168,85,247,0.08)',
-      borderGlow: 'linear-gradient(135deg, #a855f722, #ec489911)',
-    },
   ];
 
   return (
@@ -282,7 +271,7 @@ const Leadership = () => {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              Founders
+              Founder
             </span>
           </motion.h2>
 
@@ -293,17 +282,17 @@ const Leadership = () => {
             transition={{ delay: 0.2 }}
             style={{ color: '#64748b', fontSize: '1rem', maxWidth: '480px', margin: '0 auto' }}
           >
-            The visionaries building India's most powerful startup platform
+            The visionary building India's most powerful startup platform
           </motion.p>
         </div>
 
-        {/* ── Cards — always side by side on md+ ── */}
+        {/* ── Card ── */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
+            gridTemplateColumns: 'repeat(1, 1fr)',
             gap: '1.75rem',
-            maxWidth: '860px',
+            maxWidth: '480px',
             margin: '0 auto',
           }}
           className="leadership-grid"

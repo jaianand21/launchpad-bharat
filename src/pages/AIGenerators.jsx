@@ -587,23 +587,14 @@ const AIGenerators = () => {
     doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 150, 190);
     doc.text("India's Premier Startup Architect Platform", M, fy); fy += 30;
     
-    // Founder cards
+    // Founder card
     doc.setFillColor(28, 18, 52); doc.roundedRect(M, fy, W, 40, 3, 3, 'F');
     doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
     doc.text('FOUNDER & CEO', M + 5, fy + 10);
     doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
     doc.text('Jai Anand', M + 5, fy + 22);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
-    doc.text('Founder, Launchpad Bharat', M + 5, fy + 31);
-
-    fy += 50;
-    doc.setFillColor(28, 18, 52); doc.roundedRect(M, fy, W, 40, 3, 3, 'F');
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 92, 246);
-    doc.text('CO-FOUNDER', M + 5, fy + 10);
-    doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Abhay Bansal', M + 5, fy + 22);
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
-    doc.text('Co-Founder, Launchpad Bharat', M + 5, fy + 31);
+    doc.text('Founder & Lead Developer, Launchpad Bharat', M + 5, fy + 31);
 
     doc.save((r.startup_name || r.name || 'Blueprint') + '_Blueprint.pdf');
   };
@@ -996,23 +987,17 @@ const AIGenerators = () => {
               </div>
 
 
-              {/* Trust Section: Meet the Founders */}
+              {/* Trust Section: Meet the Founder */}
               <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1rem' }}>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-purple)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '1rem', textAlign: 'center' }}>
                   A Blueprint Built By Practitioners
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxWidth: '240px', margin: '0 auto' }}>
                   {/* Jai Anand */}
                   <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(34, 211, 238, 0.1)', textAlign: 'center' }}>
                     <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(59,130,246,0.1))', borderRadius: '50%', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '1px solid rgba(34, 211, 238, 0.3)' }}>👨‍💻</div>
                     <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', marginBottom: '0.1rem' }}>Jai Anand</p>
                     <p style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)', fontWeight: 600, textTransform: 'uppercase' }}>Founder & CEO</p>
-                  </div>
-                  {/* Abhay Bansal */}
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(168, 85, 247, 0.1)', textAlign: 'center' }}>
-                    <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.1))', borderRadius: '50%', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '1px solid rgba(168, 85, 247, 0.3)' }}>🚀</div>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', marginBottom: '0.1rem' }}>Abhay Bansal</p>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--accent-purple)', fontWeight: 600, textTransform: 'uppercase' }}>Co-Founder</p>
                   </div>
                 </div>
               </div>
