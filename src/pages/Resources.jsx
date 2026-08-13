@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ExternalLink, FileText, Search, Calculator, ArrowRight, ShieldCheck, CheckSquare, BookOpen, DollarSign, Eye, X, Download, Star, Zap, AlertTriangle, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { jsPDF } from 'jspdf';
 import { resourceContentData } from '../utils/resourceContent';
@@ -8,7 +7,6 @@ import { RESOURCES, INTENTS, STAGES, TYPES, PRIORITIES } from '../data/resources
 
 const Resources = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeIntent, setActiveIntent] = useState("All Needs");
   const [activeStage, setActiveStage] = useState("All Stages");
@@ -47,7 +45,7 @@ const Resources = () => {
       const M = 20, W = 170;
       let y = 20;
 
-      const safe = (t) => String(t).replace(/[^\x00-\x7F]/g, c => ({ '₹': 'INR ' }[c] || ''));
+      const safe = (t) => String(t).replace(/[^\x20-\x7E]/g, c => ({ '₹': 'INR ' }[c] || ''));
       const chk = (n = 15) => { if (y + n > 275) { doc.addPage(); y = 20; } };
 
       // --- 1. COVER PAGE ---

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Database, RefreshCw, Loader, ShieldAlert, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 const AdminPanel = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [stats, setStats] = useState({ totalDocs: 0, latestCheck: 'N/A' });

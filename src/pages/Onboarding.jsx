@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Target, Compass, Briefcase } from 'lucide-react';
 
@@ -11,7 +10,6 @@ const Onboarding = () => {
   });
   const [loading, setLoading] = useState(false);
   const { onboardUser } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

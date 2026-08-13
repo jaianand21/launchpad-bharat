@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import WelcomeModal from './components/WelcomeModal';
 import Home from './pages/Home';
@@ -42,20 +42,16 @@ const FloatingWhatsApp = () => (
 // ── Mobile Community Sticky Bar ─────────────────────────────────────────────
 const CommunityStickyBar = () => {
   const [visible, setVisible] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => !!sessionStorage.getItem('community_bar_dismissed'));
 
   useEffect(() => {
-    // Don't show if already dismissed in this session
-    if (sessionStorage.getItem('community_bar_dismissed')) {
-      setDismissed(true);
-      return;
-    }
+    if (dismissed) return;
     const onScroll = () => {
       if (window.scrollY > 400) setVisible(true);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [dismissed]);
 
   const dismiss = () => {
     setDismissed(true);
@@ -130,10 +126,35 @@ const CommunityStickyBar = () => {
   );
 };
 
+// ── Admin Route Guard ────────────────────────────────────────────────────────
+// Reads allowed emails from VITE_ADMIN_EMAILS env var (comma-separated).
+// Falls back to the founder email so the page is never accidentally open.
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'jai@launchpadbharat.com')
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
+
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth();
+  const email = user?.email?.toLowerCase() || '';
+  if (!user || !ADMIN_EMAILS.includes(email)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 function App() {
-  const { user, saveVisitor } = useAuth();
-  const [showModal, setShowModal] = useState(!user);
+  const { hasVisited, saveVisitor, authLoading } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (!authLoading && !hasVisited) {
+      timer = setTimeout(() => setShowModal(true), 0);
+    }
+    return () => clearTimeout(timer);
+  }, [authLoading, hasVisited]);
 
   const handleModalComplete = (visitorData) => {
     saveVisitor(visitorData);
@@ -153,7 +174,7 @@ function App() {
           <Route path="/resources"     element={<Resources />} />
           <Route path="/calculator"    element={<Calculator />} />
           <Route path="/gst-calculator" element={<GstCalculator />} />
-          <Route path="/admin"         element={<AdminPanel />} />
+          <Route path="/admin"         element={<AdminRoute><AdminPanel /></AdminRoute>} />
           <Route path="/profile"       element={<Profile />} />
           <Route path="/dashboard"     element={<Home />} />
 

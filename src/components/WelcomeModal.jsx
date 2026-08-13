@@ -36,8 +36,8 @@ const WelcomeModal = ({ onComplete }) => {
         throw new Error('Server returned an error. Please try again.');
       }
 
-      // Only save to localStorage and show success if the database actually received it
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(visitorData));
+      // Only save an indicator to localStorage to avoid PII exposure
+      localStorage.setItem(STORAGE_KEY, 'true');
       setDone(true);
     } catch (err) {
       console.error('Database Sync Error:', err.message);

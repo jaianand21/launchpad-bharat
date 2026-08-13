@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Rocket, Sparkles, BookOpen, User, ChevronDown, ShoppingCart, Calculator, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { locale, setLocale, t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -14,7 +16,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const update = () => {
-      try { setSavedCount(JSON.parse(localStorage.getItem('saved_blueprints') || '[]').length); } catch {}
+      try { setSavedCount(JSON.parse(localStorage.getItem('saved_blueprints') || '[]').length); } catch { /* fallback */ }
     };
     update();
     window.addEventListener('storage', update);
@@ -34,7 +36,10 @@ const Navbar = () => {
   }, []);
 
   // Close mobile menu on route change
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const isActive = (path) => location.pathname === path;
 
@@ -69,18 +74,48 @@ const Navbar = () => {
             <Link to="/generators" style={navLinkStyle('/generators')}
               onMouseEnter={e => { if (!isActive('/generators')) { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}}
               onMouseLeave={e => { if (!isActive('/generators')) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}}>
-              <Sparkles size={17} /> AI Tools
+              <Sparkles size={17} /> {t('buildWithAi')}
             </Link>
             <Link to="/resources" style={navLinkStyle('/resources')}
               onMouseEnter={e => { if (!isActive('/resources')) { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}}
               onMouseLeave={e => { if (!isActive('/resources')) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}}>
-              <BookOpen size={17} /> Resources
+              <BookOpen size={17} /> {t('resources')}
             </Link>
             <Link to="/calculator" style={navLinkStyle('/calculator')}
               onMouseEnter={e => { if (!isActive('/calculator')) { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}}
               onMouseLeave={e => { if (!isActive('/calculator')) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}}>
-              <Calculator size={17} /> Calculators
+              <Calculator size={17} /> {t('calculators')}
             </Link>
+
+            <button 
+              onClick={() => setLocale(locale === 'en' ? 'hi' : 'en')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                transition: 'all 0.2s',
+                marginRight: '0.25rem',
+                marginLeft: '0.25rem'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <span>🌐</span> {locale === 'en' ? 'English' : 'हिन्दी'}
+            </button>
 
             {/* Saved Blueprints Cart */}
             {savedCount > 0 && (
@@ -164,16 +199,40 @@ const Navbar = () => {
             )}
 
             {[
-              { path: '/generators', icon: <Sparkles size={18} />, label: 'AI Tools' },
-              { path: '/resources', icon: <BookOpen size={18} />, label: 'Resources' },
-              { path: '/calculator', icon: <Calculator size={18} />, label: 'Calculators' },
-              { path: '/profile', icon: <User size={18} />, label: 'My Profile' },
+              { path: '/generators', icon: <Sparkles size={18} />, label: t('buildWithAi') },
+              { path: '/resources', icon: <BookOpen size={18} />, label: t('resources') },
+              { path: '/calculator', icon: <Calculator size={18} />, label: t('calculators') },
+              { path: '/profile', icon: <User size={18} />, label: t('profile') },
             ].map(({ path, icon, label }) => (
               <Link key={path} to={path}
                 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', borderRadius: '0.75rem', color: isActive(path) ? 'var(--accent-cyan)' : 'var(--text-secondary)', background: isActive(path) ? 'rgba(34,211,238,0.08)' : 'transparent', fontWeight: isActive(path) ? 600 : 400, textDecoration: 'none', fontSize: '1rem', transition: 'all 0.15s' }}>
                 {icon} {label}
               </Link>
             ))}
+
+            <button 
+              onClick={() => setLocale(locale === 'en' ? 'hi' : 'en')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.85rem 1rem',
+                borderRadius: '0.75rem',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid var(--glass-border)',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.15s',
+                marginTop: '0.5rem',
+                textAlign: 'left'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+            >
+              <span>🌐</span> {locale === 'en' ? 'Switch to हिन्दी' : 'Switch to English'}
+            </button>
 
             <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center' }}>Made with ❤️ for Indian Founders</p>

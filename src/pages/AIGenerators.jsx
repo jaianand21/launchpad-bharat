@@ -4,6 +4,8 @@ import { Wand2, Download, FileText, ThumbsUp, ThumbsDown, Bookmark, Smartphone, 
 import CreatableSelect from 'react-select/creatable';
 import { jsPDF } from 'jspdf';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n';
+import UpgradeModal from '../components/UpgradeModal';
 
 const SKILLS = [
   "Web Development", "UI/UX Design", "Digital Marketing", "AI/ML", "Sales & Negotiation",
@@ -71,18 +73,46 @@ const AIGenerators = () => {
   const { user } = useAuth();
   const userName = user?.name || 'Founder';
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [selectedNiches, setSelectedNiches] = useState([]);
-  const [budget, setBudget] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lb_form_skills');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedNiches, setSelectedNiches] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lb_form_niches');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [budget, setBudget] = useState(() => {
+    return localStorage.getItem('lb_form_budget') || '';
+  });
   const [rejectedNames, setRejectedNames] = useState([]);
   const [rating, setRating] = useState(0);
   const [savedBlueprints, setSavedBlueprints] = useState(() => {
     try { return JSON.parse(localStorage.getItem('saved_blueprints') || '[]'); } catch { return []; }
   });
   const [showSaved, setShowSaved] = useState(false);
+
+  // PWA/Offline state
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [offlineError, setOfflineError] = useState(false);
+
+  // Plan Details state
+  const [planDetails, setPlanDetails] = useState({ plan: 'free', blueprint_count_this_month: 0, chat_message_count_this_session: 0 });
+
+  // Upgrade Modal state
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeContext, setUpgradeContext] = useState('blueprint');
 
   // Chat states
   const [chatInput, setChatInput] = useState('');
@@ -94,6 +124,57 @@ const AIGenerators = () => {
   const resultRef = useRef(null);
   const chatBottomRef = useRef(null);
   const chatMountedRef = useRef(false); // prevents auto-scroll on first load
+
+  // Save form fields to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('lb_form_skills', JSON.stringify(selectedSkills));
+  }, [selectedSkills]);
+
+  useEffect(() => {
+    localStorage.setItem('lb_form_niches', JSON.stringify(selectedNiches));
+  }, [selectedNiches]);
+
+  useEffect(() => {
+    localStorage.setItem('lb_form_budget', budget);
+  }, [budget]);
+
+  // Track online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const fetchPlan = async () => {
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBase}/api/user/plan`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPlanDetails(data);
+      }
+    } catch (err) {
+      console.error('[PLAN] Failed to fetch plan details:', err);
+    }
+  };
+
+  const openUpgradeModal = (context = 'blueprint') => {
+    setUpgradeContext(context);
+    setIsUpgradeModalOpen(true);
+  };
+
+  const handleUpgradeSuccess = () => {
+    fetchPlan();
+  };
 
   // Warm-up ping: wake the Render backend on page load to avoid cold-start timeout
   useEffect(() => {
@@ -111,6 +192,10 @@ const AIGenerators = () => {
   }, [searchParams, savedBlueprints.length, setSearchParams]);
 
   useEffect(() => {
+    fetchPlan();
+  }, []);
+
+  useEffect(() => {
     // Skip first render — only scroll chat when new messages are added
     if (!chatMountedRef.current) {
       chatMountedRef.current = true;
@@ -119,24 +204,72 @@ const AIGenerators = () => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleChatSubmit = (e) => {
+  const handleChatSubmit = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
-    const newMessages = [...messages, { role: 'user', text: chatInput }];
+    if (!isOnline) {
+      alert(t('offlineBanner'));
+      return;
+    }
+
+    const currentMsg = chatInput;
+    const newMessages = [...messages, { role: 'user', text: currentMsg }];
     setMessages(newMessages);
     setChatInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      let reply = 'Interesting angle. What is your starting capital (in INR) and your primary skill set? That determines whether this idea is viable or needs a pivot.';
-      if (/\d{3,}/.test(chatInput)) reply = `Got the budget figure. Now — what is your primary skill? Web Dev, Marketing, Operations? That shapes how I build the execution strategy for you.`;
-      else if (/skill|dev|design|market/i.test(chatInput)) reply = `Noted the skills. You can hit "Generate Blueprint from Chat" now, or keep refining. I need your INR budget to validate feasibility.`;
-      setMessages([...newMessages, { role: 'assistant', text: reply }]);
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      
+      const history = messages.map(m => ({
+        role: m.role,
+        content: m.text
+      }));
+
+      const response = await fetch(`${apiBase}/api/chat-architect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: currentMsg,
+          history,
+          blueprint: result
+        })
+      });
+
+      if (!response.ok) {
+        let errData;
+        try {
+          errData = await response.json();
+        } catch {
+          throw new Error('Failed to process message.');
+        }
+
+        if (response.status === 403 && errData.error === 'CHAT_LIMIT_REACHED') {
+          openUpgradeModal('chat');
+          return;
+        }
+        if (response.status === 401 && errData.error === 'AUTH_TOKEN_EXPIRED') {
+          alert('Session expired. Redirecting to login...');
+          window.location.href = '/login';
+          return;
+        }
+
+        throw new Error(errData.message || errData.error || 'Failed to send message');
+      }
+
+      const data = await response.json();
+      setMessages([...newMessages, { role: 'assistant', text: data.response }]);
+      fetchPlan();
+    } catch (err) {
+      console.error('[CHAT] Error:', err.message);
+      alert('Chat Error: ' + err.message);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
 
-  const runGenerate = async (rejected = rejectedNames) => {
+  const runGenerate = async () => {
     if (selectedSkills.length === 0 || selectedNiches.length === 0 || !budget) {
       alert('Please fill in Skills, Niche, and Starting Budget before generating.');
       return;
@@ -145,16 +278,20 @@ const AIGenerators = () => {
     setLoading(true);
     setResult(null);
     setRating(0);
+    setOfflineError(false);
 
     const skillsStr = selectedSkills.map(s => s.label).join(', ');
     const nichesStr = selectedNiches.map(n => n.label).join(', ');
 
-
     try {
+      if (!navigator.onLine) {
+        throw new Error('OFFLINE');
+      }
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiBase}/api/generate-blueprint`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           skills: skillsStr,
           niches: nichesStr,
@@ -166,8 +303,24 @@ const AIGenerators = () => {
       });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to generate blueprint');
+        let errData;
+        try {
+          errData = await response.json();
+        } catch {
+          throw new Error('Failed to generate blueprint');
+        }
+        
+        if (response.status === 403 && errData.error === 'PAYWALL_LIMIT_REACHED') {
+          openUpgradeModal('blueprint');
+          return;
+        }
+        if (response.status === 401 && errData.error === 'AUTH_TOKEN_EXPIRED') {
+          alert('Session expired. Redirecting to login...');
+          window.location.href = '/login';
+          return;
+        }
+
+        throw new Error(errData.message || errData.error || 'Failed to generate blueprint');
       }
 
       const blueprintData = await response.json();
@@ -180,12 +333,16 @@ const AIGenerators = () => {
       };
 
       setResult(finalResult);
+      fetchPlan();
     } catch (err) {
       console.error('[GENERATE] Error:', err.message);
-      alert('Error: ' + err.message);
+      if (err.message === 'OFFLINE' || err.name === 'TypeError' || !navigator.onLine) {
+        setOfflineError(true);
+      } else {
+        alert('Error: ' + err.message);
+      }
     } finally {
       setLoading(false);
-      // Scroll to result only after blueprint is generated (not on page load)
       if (resultRef.current && result !== null) {
         resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -224,7 +381,7 @@ const AIGenerators = () => {
     const M = 20, W = 170;
     let y = 20;
 
-    const safe = (t) => String(t || '').replace(/[^\x00-\x7F]/g, c =>
+    const safe = (t) => String(t || '').replace(/[^\x20-\x7E]/g, c =>
       ({ '₹': 'INR ', '✅': '[OK]', '⚠️': '[!]', '❌': '[X]' }[c] || ''));
 
     const chk = (n = 12) => { if (y + n > 275) { doc.addPage(); y = 22; } };
@@ -447,11 +604,10 @@ const AIGenerators = () => {
     doc.text('Abhay Bansal', M + 5, fy + 22);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 200);
     doc.text('Co-Founder, Launchpad Bharat', M + 5, fy + 31);
-    
+
     doc.save((r.startup_name || r.name || 'Blueprint') + '_Blueprint.pdf');
   };
 
-  // ── Helper: get startup name from old or new schema ──────────────────────
   const getName = (r) => r?.startup_name || r?.name || 'Startup';
 
   return (
@@ -459,15 +615,51 @@ const AIGenerators = () => {
       <div className="text-center mb-8">
         <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Advanced <span className="text-accent">Startup Builder</span></h1>
         <p className="text-secondary" style={{ fontSize: '1.1rem', maxWidth: '800px', margin: '0 auto' }}>
-          Welcome, {userName}. This tool gives you a <strong>brutally honest</strong> Detailed Blueprint — real costs, real risks, real feasibility.
+          {t('description', { name: userName })}
         </p>
+      </div>
+
+      {/* Plan Details & Monthly Reset Badge */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.45rem 1rem',
+          background: planDetails.plan === 'premium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+          border: planDetails.plan === 'premium' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '2rem',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          color: planDetails.plan === 'premium' ? '#f59e0b' : 'var(--text-secondary)'
+        }}>
+          <span>👑</span>
+          <span>{planDetails.plan === 'premium' ? t('badgePremium') : t('badgeFree')}</span>
+        </div>
+        {planDetails.plan === 'free' && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.45rem 1rem',
+            background: 'rgba(124, 92, 252, 0.1)',
+            border: '1px solid rgba(124, 92, 252, 0.3)',
+            borderRadius: '2rem',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            color: '#c084fc'
+          }}>
+            <span>📊</span>
+            <span>{t('badgeUsed')}: {planDetails.blueprint_count_this_month}/3</span>
+          </div>
+        )}
       </div>
 
       {/* Saved Blueprints toggle */}
       {savedBlueprints.length > 0 && (
         <div style={{ marginBottom: '1.5rem', textAlign: 'right' }}>
           <button onClick={() => setShowSaved(v => !v)} className="btn btn-outline" style={{ padding: '0.5rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Bookmark size={16} /> My Saved Blueprints ({savedBlueprints.length})
+            <Bookmark size={16} /> {t('savedBlueprints')} ({savedBlueprints.length})
           </button>
         </div>
       )}
@@ -475,7 +667,7 @@ const AIGenerators = () => {
       {/* Saved Blueprints Panel */}
       {showSaved && savedBlueprints.length > 0 && (
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', color: 'var(--accent-cyan)' }}>Saved Blueprints</h3>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', color: 'var(--accent-cyan)' }}>{t('savedBlueprints')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
             {savedBlueprints.map((bp, i) => (
               <div
@@ -502,33 +694,33 @@ const AIGenerators = () => {
           <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--accent-purple)' }}>Structured Form</h3>
           <form onSubmit={(e) => { e.preventDefault(); runGenerate(); }} className="flex flex-col gap-5">
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Your Skills</label>
-              <CreatableSelect isMulti options={SKILLS} styles={selectStyles} placeholder="Search or add..." onChange={setSelectedSkills} formatCreateLabel={(v) => `Add "${v}"`} noOptionsMessage={() => 'Type a skill and press Enter'} />
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('skillsLabel')}</label>
+              <CreatableSelect isMulti options={SKILLS} styles={selectStyles} placeholder={t('skillsPlaceholder')} onChange={setSelectedSkills} formatCreateLabel={(v) => `Add "${v}"`} noOptionsMessage={() => 'Type a skill and press Enter'} value={selectedSkills} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Target Niche / Industry</label>
-              <CreatableSelect isMulti options={NICHES} styles={selectStyles} placeholder="Search or add..." onChange={setSelectedNiches} formatCreateLabel={(v) => `Add "${v}"`} noOptionsMessage={() => 'Type a niche and press Enter'} />
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('nichesLabel')}</label>
+              <CreatableSelect isMulti options={NICHES} styles={selectStyles} placeholder={t('nichesPlaceholder')} onChange={setSelectedNiches} formatCreateLabel={(v) => `Add "${v}"`} noOptionsMessage={() => 'Type a niche and press Enter'} value={selectedNiches} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Starting Capital (INR)</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('capitalLabel')}</label>
               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0 1rem', borderRadius: '0.5rem', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center' }}>
                 <span className="text-secondary" style={{ marginRight: '0.5rem', fontSize: '1.1rem' }}>INR</span>
-                <input type="number" placeholder="e.g., 15000" value={budget} onChange={e => setBudget(e.target.value)}
+                <input type="number" inputMode="numeric" placeholder={t('capitalPlaceholder')} value={budget} onChange={e => setBudget(e.target.value)}
                   style={{ width: '100%', padding: '0.75rem 0', background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '1rem' }} required />
               </div>
               {budget && Number(budget) < 5000 && (
                 <p style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <AlertTriangle size={13} /> Below minimum viability — service/consulting model will be suggested
+                  <AlertTriangle size={13} /> {t('belowViability')}
                 </p>
               )}
             </div>
-            <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%', padding: '1rem' }} disabled={loading}>
-              {loading ? 'Building Blueprint...' : <><Wand2 size={18} /> Generate Honest Blueprint</>}
+            <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%', padding: '1rem' }} disabled={loading || !isOnline}>
+              {!isOnline ? t('offlineBtnText') : loading ? t('generatingBtn') : <><Wand2 size={18} /> {t('generateBtn')}</>}
             </button>
           </form>
 
           <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center' }}>
-            <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Talk to a Guide</h4>
+            <h4 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('talkToGuide')}</h4>
             <a href="https://wa.me/919358022343" target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.5rem 1rem', borderColor: '#25D366', color: '#25D366', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
               <Smartphone size={16} /> WhatsApp
             </a>
@@ -537,7 +729,7 @@ const AIGenerators = () => {
 
         {/* CENTER: Chat Assistant */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--accent-cyan)' }}>AI Architect Chat</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--accent-cyan)' }}>{t('chatTitle')}</h3>
           <div style={{ flex: 1, overflowY: 'auto', maxHeight: '380px', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem', paddingRight: '0.25rem' }}>
             {messages.map((m, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -559,23 +751,42 @@ const AIGenerators = () => {
             <div ref={chatBottomRef} />
           </div>
           <form onSubmit={handleChatSubmit} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Describe your idea, budget, skills..."
+            <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={t('chatPlaceholder')}
               style={{ flex: 1, padding: '0.85rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.3)', color: 'white', outline: 'none', fontSize: '0.9rem' }} />
-            <button type="submit" className="btn" style={{ padding: '0 1.25rem', background: 'var(--accent-cyan)', color: 'black', fontWeight: 700 }}>→</button>
+            <button type="submit" className="btn" style={{ padding: '0 1.25rem', background: 'var(--accent-cyan)', color: 'black', fontWeight: 700 }} disabled={!isOnline}>→</button>
           </form>
-          <button onClick={(e) => generateFromChat(e)} className="btn btn-primary" style={{ width: '100%', padding: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-            <Wand2 size={18} /> Generate Blueprint from Chat
+          <button onClick={(e) => generateFromChat(e)} className="btn btn-primary" style={{ width: '100%', padding: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} disabled={!isOnline}>
+            <Wand2 size={18} /> {t('generateFromChat')}
           </button>
         </div>
 
         {/* RIGHT: Blueprint Output */}
         <div ref={resultRef} className="glass-panel" style={{ minHeight: '650px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Your Custom Blueprint</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>{t('customBlueprint')}</h3>
+
+          {offlineError && (
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(244, 63, 94, 0.1)',
+              border: '1px solid rgba(244, 63, 94, 0.25)',
+              borderRadius: '0.5rem',
+              color: '#f43f5e',
+              marginBottom: '1rem',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontWeight: 500
+            }}>
+              <AlertTriangle size={16} />
+              <span>{t('offlineBanner')}</span>
+            </div>
+          )}
 
           {!result && !loading && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', textAlign: 'center' }}>
               <FileText size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-              <p>Fill the form and click Generate to get your 18-page startup blueprint.</p>
+              <p>{t('noBlueprintText')}</p>
             </div>
           )}
 
@@ -685,11 +896,11 @@ const AIGenerators = () => {
                 <Section title="6-Month Execution Roadmap" color="#22d3ee">
                   {result.six_month_roadmap.map((m, i) => (
                     <div key={i} style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'rgba(34,211,238,0.06)', borderRadius: '0.5rem', border: '1px solid rgba(34,211,238,0.12)' }}>
-                      <p style={{ fontWeight: 700, color: 'var(--accent-cyan)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>{m.month} — {m.theme}</p>
+                      <p style={{ fontWeight: 700, color: 'var(--accent-cyan)', fontSize: '0.85rem', marginBottom: '0.3' }}>{m.month} — {m.theme}</p>
                       {m.weekly_tasks?.map((t, j) => (
                         <p key={j} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.5rem', lineHeight: 1.5 }}>• {t}</p>
                       ))}
-                      <p style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 600, marginTop: '0.3rem' }}>Milestone: {m.milestone}</p>
+                      <p style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 600, marginTop: '0.35rem' }}>Milestone: {m.milestone}</p>
                     </div>
                   ))}
                 </Section>
@@ -724,7 +935,7 @@ const AIGenerators = () => {
               {result.website_must_haves && (
                 <Section title="Website Blueprint" color="#6366f1">
                   {result.website_must_haves.map((f, i) => (
-                    <p key={i} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
+                    <p key={i} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
                       <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '0.4rem', color: '#22c55e' }} />{f}
                     </p>
                   ))}
@@ -767,20 +978,20 @@ const AIGenerators = () => {
 
               {/* Rating */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Rate this blueprint:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('rateBlueprint')}</span>
                 <StarRating value={rating} onChange={setRating} />
               </div>
 
               {/* Like / Dislike / Download */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '0.75rem' }}>
                 <button onClick={handleLike} className="btn btn-outline" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', borderColor: 'rgba(34,197,94,0.4)', color: '#22c55e', padding: '0.75rem' }}>
-                  <ThumbsUp size={18} /> Save
+                  <ThumbsUp size={18} /> {t('btnSave')}
                 </button>
                 <button onClick={handleDislike} className="btn btn-outline" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', borderColor: 'rgba(244,63,94,0.4)', color: '#f43f5e', padding: '0.75rem' }}>
-                  <ThumbsDown size={18} /> Retry
+                  <ThumbsDown size={18} /> {t('btnRetry')}
                 </button>
                 <button onClick={generatePDF} className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', background: 'linear-gradient(135deg, #10b981, #059669)', padding: '0.75rem' }}>
-                  <Download size={18} /> Download Detailed PDF
+                  <Download size={18} /> {t('btnDownloadPdf')}
                 </button>
               </div>
 
@@ -823,6 +1034,12 @@ const AIGenerators = () => {
           )}
         </div>
       </div>
+      <UpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+        onSuccess={handleUpgradeSuccess} 
+        context={upgradeContext} 
+      />
       <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
     </div>
   );

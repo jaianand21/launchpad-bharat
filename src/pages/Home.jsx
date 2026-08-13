@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, Sparkles, BookOpen, CheckCircle, Calculator,
-  TrendingUp, Users, FileText, Star, Zap, Shield, Clock
+  TrendingUp, Users, FileText, Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Leadership from '../components/Leadership';
@@ -48,6 +48,33 @@ const Home = () => {
     latestBlueprintUser: null
   });
 
+  const [testimonials, setTestimonials] = useState(TESTIMONIALS);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiBase}/api/testimonials`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const mapped = data.map(t => ({
+              name: t.users?.name || 'Founder',
+              city: 'Verified Founder',
+              stage: t.startup_name || '🚀 Launching',
+              quote: t.quote,
+              stars: 5
+            }));
+            setTestimonials(mapped);
+          }
+        }
+      } catch (err) {
+        console.error('[TESTIMONIALS] Fetch error:', err);
+      }
+    };
+    fetchTestimonials();
+  }, []);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -56,7 +83,9 @@ const Home = () => {
           const data = await res.json();
           setLiveData(prev => ({...prev, ...data}));
         }
-      } catch (err) {}
+      } catch {
+        /* silent stats fallback */
+      }
     };
     fetchStats();
     const interval = setInterval(fetchStats, 10000); // Live poll every 10s
@@ -229,13 +258,56 @@ const Home = () => {
 
       {/* ── Testimonials ─────────────────────────────────────────────────── */}
       <section style={{ marginTop: '5rem' }}>
+        <style>{`
+          .testimonials-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+          }
+          
+          @media (max-width: 640px) {
+            .testimonials-container {
+              display: flex !important;
+              overflow-x: auto;
+              scroll-snap-type: x mandatory;
+              padding-bottom: 1rem;
+              gap: 1rem;
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+            }
+            .testimonials-container::-webkit-scrollbar {
+              display: none;
+            }
+            .testimonial-card {
+              min-width: 280px !important;
+              scroll-snap-align: start;
+            }
+          }
+
+          .testimonial-card {
+            transition: all 0.3s ease;
+          }
+
+          .testimonial-card:hover {
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.25) !important;
+            border-color: rgba(245, 158, 11, 0.4) !important;
+          }
+        `}</style>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: '0.5rem' }}>Founder Stories</p>
           <h2 style={{ fontSize: '2.15rem' }}>Trusted by <span className="text-accent">Real Founders</span></h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
-          {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div className="testimonials-container">
+          {testimonials.map((t, i) => (
+            <motion.div
+              key={i}
+              className="glass-panel testimonial-card"
+              style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.15, type: 'spring', stiffness: 100 }}
+            >
               <div style={{ display: 'flex', gap: '0.2rem' }}>
                 {[...Array(t.stars)].map((_, j) => <Star key={j} size={14} fill="#f59e0b" color="#f59e0b" />)}
               </div>
@@ -247,7 +319,7 @@ const Home = () => {
                 </div>
                 <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem', background: 'rgba(139,92,246,0.15)', color: 'var(--accent-purple)', borderRadius: '1rem', border: '1px solid rgba(139,92,246,0.25)' }}>{t.stage}</span>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>

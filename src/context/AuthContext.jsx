@@ -1,21 +1,42 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = 'lb_visitor';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : null;
-    } catch {
-      return null;
-    }
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  // Track if they've submitted the welcome modal
+  const [hasVisited, setHasVisited] = useState(() => {
+    return !!localStorage.getItem(STORAGE_KEY);
   });
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/auth/me`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+          setHasVisited(true);
+        }
+      } catch (err) {
+        console.error('[Auth] Session check failed:', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
   const saveVisitor = async (visitorData) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(visitorData));
-    setUser(visitorData);
+    // Only store an indicator, no PII
+    localStorage.setItem(STORAGE_KEY, 'true');
+    setHasVisited(true);
     
     // Sync join to live feed
     try {
@@ -32,10 +53,12 @@ export const AuthProvider = ({ children }) => {
 
   const clearVisitor = () => {
     localStorage.removeItem(STORAGE_KEY);
+    setHasVisited(false);
     setUser(null);
   };
 
   const logout = () => {
+    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     clearVisitor();
     window.location.reload();
   };
@@ -54,9 +77,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await response.json();
       if (data.success) {
-        const updatedUser = { ...user, ...data.user };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-        setUser(updatedUser);
+        setUser(prev => ({ ...prev, ...data.user }));
         return { success: true };
       }
       return { success: false, error: data.error };
@@ -66,11 +87,89 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const login = async (credentials) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(credentials)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.user);
+        setHasVisited(true);
+        return { success: true, isNewUser: data.isNewUser };
+      }
+      return { success: false, error: data.error };
+    } catch (err) {
+      console.error('[Auth] Login error:', err);
+      return { success: false, error: 'Login failed.' };
+    }
+  };
+
+  const signup = async (credentials) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(credentials)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.user);
+        setHasVisited(true);
+        return { success: true, isNewUser: data.isNewUser };
+      }
+      return { success: false, error: data.error };
+    } catch (err) {
+      console.error('[Auth] Signup error:', err);
+      return { success: false, error: 'Signup failed.' };
+    }
+  };
+
+  const loginWithGoogle = async (credentialResponse) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id_token: credentialResponse.credential })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.user);
+        setHasVisited(true);
+        return { success: true, isNewUser: data.isNewUser };
+      }
+      return { success: false, error: data.error };
+    } catch (err) {
+      console.error('[Auth] Google login error:', err);
+      return { success: false, error: 'Google Login failed.' };
+    }
+  };
+
   // Derive display name safely
   const userName = user?.name || 'Founder';
 
   return (
-    <AuthContext.Provider value={{ user, userName, saveVisitor, clearVisitor, logout, onboardUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      hasVisited,
+      authLoading,
+      userName, 
+      saveVisitor, 
+      clearVisitor, 
+      logout, 
+      onboardUser,
+      login,
+      signup,
+      loginWithGoogle
+    }}>
       {children}
     </AuthContext.Provider>
   );
