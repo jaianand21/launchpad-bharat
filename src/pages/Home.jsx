@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Leadership from '../components/Leadership';
+import { getApiBaseUrl } from '../config/api';
 
 // ── Animated counter hook ─────────────────────────────────────────────────────
 const useCounter = (end, duration = 2000) => {
@@ -53,7 +54,7 @@ const Home = () => {
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiBase = getApiBaseUrl();
         const res = await fetch(`${apiBase}/api/testimonials`);
         if (res.ok) {
           const data = await res.json();
@@ -78,7 +79,7 @@ const Home = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/stats`);
+        const res = await fetch(`${getApiBaseUrl()}/api/stats`);
         if (res.ok) {
           const data = await res.json();
           setLiveData(prev => ({...prev, ...data}));

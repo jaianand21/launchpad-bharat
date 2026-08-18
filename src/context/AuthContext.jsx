@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getApiBaseUrl } from '../config/api';
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = 'lb_visitor';
@@ -15,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiUrl = getApiBaseUrl();
         const res = await fetch(`${apiUrl}/api/auth/me`, {
           credentials: 'include'
         });
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     
     // Sync join to live feed
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = getApiBaseUrl();
       await fetch(`${apiUrl}/api/stats/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,7 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   const onboardUser = async (onboardingData) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/api/user/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -89,7 +90,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,7 +112,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (credentials) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,7 +134,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = async (credentialResponse) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

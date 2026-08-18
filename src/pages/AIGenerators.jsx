@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import UpgradeModal from '../components/UpgradeModal';
+import { getApiBaseUrl } from '../config/api';
 
 const SKILLS = [
   "Web Development", "UI/UX Design", "Digital Marketing", "AI/ML", "Sales & Negotiation",
@@ -154,7 +155,7 @@ const AIGenerators = () => {
 
   const fetchPlan = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBase = getApiBaseUrl();
       const response = await fetch(`${apiBase}/api/user/plan`, {
         credentials: 'include'
       });
@@ -178,7 +179,7 @@ const AIGenerators = () => {
 
   // Warm-up ping: wake the Render backend on page load to avoid cold-start timeout
   useEffect(() => {
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiBase = getApiBaseUrl();
     fetch(`${apiBase}/health`).catch(() => {}); // Silent — just wakes up the server
   }, []);
 
@@ -219,7 +220,7 @@ const AIGenerators = () => {
     setIsTyping(true);
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBase = getApiBaseUrl();
       
       const history = messages.map(m => ({
         role: m.role,
@@ -249,8 +250,8 @@ const AIGenerators = () => {
           openUpgradeModal('chat');
           return;
         }
-        if (response.status === 401 && errData.error === 'AUTH_TOKEN_EXPIRED') {
-          alert('Session expired. Redirecting to login...');
+        if (response.status === 401 && (errData.error === 'AUTH_TOKEN_EXPIRED' || errData.error === 'AUTH_TOKEN_MISSING')) {
+          alert('Session expired or login required. Redirecting to login...');
           window.location.href = '/login';
           return;
         }
@@ -287,7 +288,7 @@ const AIGenerators = () => {
       if (!navigator.onLine) {
         throw new Error('OFFLINE');
       }
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBase = getApiBaseUrl();
       const response = await fetch(`${apiBase}/api/generate-blueprint`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -314,8 +315,8 @@ const AIGenerators = () => {
           openUpgradeModal('blueprint');
           return;
         }
-        if (response.status === 401 && errData.error === 'AUTH_TOKEN_EXPIRED') {
-          alert('Session expired. Redirecting to login...');
+        if (response.status === 401 && (errData.error === 'AUTH_TOKEN_EXPIRED' || errData.error === 'AUTH_TOKEN_MISSING')) {
+          alert('Please log in to generate your custom AI startup blueprint.');
           window.location.href = '/login';
           return;
         }

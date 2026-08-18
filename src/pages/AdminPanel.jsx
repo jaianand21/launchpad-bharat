@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, RefreshCw, Loader, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { getApiBaseUrl } from '../config/api';
 
 const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
@@ -7,7 +8,7 @@ const AdminPanel = () => {
   const [stats, setStats] = useState({ totalDocs: 0, latestCheck: 'N/A' });
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = getApiBaseUrl();
     fetch(`${apiUrl}/api/documents`)
       .then(res => res.json())
       .then(data => {
@@ -23,9 +24,10 @@ const AdminPanel = () => {
     setLoading(true);
     setSuccessMsg('');
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/api/documents/sync`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include'
       });
       const data = await res.json();
       if (data.success) {

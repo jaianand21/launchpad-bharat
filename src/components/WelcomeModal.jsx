@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Rocket, User, Mail, Phone, ArrowRight, CheckCircle, Loader } from 'lucide-react';
+import { getApiBaseUrl } from '../config/api';
 
 const STORAGE_KEY = 'lb_visitor';
 
@@ -26,7 +27,7 @@ const WelcomeModal = ({ onComplete }) => {
     const visitorData = { name: name.trim(), email: email.trim(), mobile: mobile.trim(), joinedAt: new Date().toISOString() };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(visitorData),

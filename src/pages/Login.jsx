@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Rocket, Mail, Lock, User, AlertCircle, Loader, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
+import { getApiBaseUrl } from '../config/api';
 
-const API = 'http://localhost:5000/api/auth';
+const API = `${getApiBaseUrl()}/api/auth`;
 
 const Login = () => {
   // mode: 'login' | 'signup' | 'forgot' | 'reset'

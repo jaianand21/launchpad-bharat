@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Zap, Sparkles, Shield, Smartphone } from 'lucide-react';
 import { PREMIUM_PRICE_LABEL, PREMIUM_PRICE_INR } from '../config/pricing';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../config/api';
 
 const UpgradeModal = ({ isOpen, onClose, onSuccess, context = 'blueprint' }) => {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ const UpgradeModal = ({ isOpen, onClose, onSuccess, context = 'blueprint' }) => 
   const handleUpgrade = async () => {
     setLoading(true);
     setErrorMsg('');
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiBase = getApiBaseUrl();
 
     try {
       // In development mode (where VITE_API_URL might be local or in non-prod), we bypass real Razorpay
