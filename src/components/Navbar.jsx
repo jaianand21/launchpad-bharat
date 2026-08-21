@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Rocket, Sparkles, BookOpen, User, ChevronDown, ShoppingCart, Calculator, Menu, X } from 'lucide-react';
+import { Rocket, Sparkles, BookOpen, User, ChevronDown, ShoppingCart, Calculator, Menu, X, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { locale, setLocale, t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -129,7 +129,7 @@ const Navbar = () => {
             )}
 
             {/* Visitor badge */}
-            {user && (
+            {user ? (
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <button onClick={() => setDropdownOpen(prev => !prev)}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)', borderRadius: '2rem', padding: '0.4rem 0.85rem 0.4rem 0.4rem', cursor: 'pointer', transition: 'background 0.2s' }}
@@ -148,7 +148,7 @@ const Navbar = () => {
                   <div style={{ position: 'absolute', top: 'calc(100% + 0.5rem)', right: 0, background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '0.5rem', minWidth: 190, boxShadow: '0 20px 40px rgba(0,0,0,0.5)', zIndex: 200 }}>
                     <div style={{ padding: '0.5rem 0.75rem 0.75rem', borderBottom: '1px solid var(--glass-border)', marginBottom: '0.25rem' }}>
                       <p style={{ margin: 0, fontWeight: 600, color: 'white', fontSize: '0.95rem' }}>{user.name}</p>
-                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{user.email}</p>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{user.email || user.mobile_number || ''}</p>
                     </div>
                     <button onClick={() => { setDropdownOpen(false); navigate('/profile'); }}
                       style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 0.75rem', background: 'none', border: 'none', color: 'var(--text-secondary)', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'left', transition: 'all 0.15s' }}
@@ -156,9 +156,39 @@ const Navbar = () => {
                       onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}>
                       <User size={16} /> My Profile
                     </button>
+                    <button onClick={() => { setDropdownOpen(false); logout(); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 0.75rem', background: 'none', border: 'none', color: 'var(--text-secondary)', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'left', transition: 'all 0.15s', borderTop: '1px solid var(--glass-border)', marginTop: '0.25rem' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; e.currentTarget.style.color = '#f87171'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}>
+                      <LogOut size={16} /> Sign Out
+                    </button>
                   </div>
                 )}
               </div>
+            ) : (
+              <Link to="/login" style={{
+                background: 'rgba(34,211,238,0.1)',
+                border: '1px solid rgba(34,211,238,0.3)',
+                color: 'var(--accent-cyan)',
+                padding: '0.45rem 1.1rem',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 15px rgba(34,211,238,0.1)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(34,211,238,0.2)';
+                e.currentTarget.style.background = 'rgba(34,211,238,0.18)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(34,211,238,0.1)';
+                e.currentTarget.style.background = 'rgba(34,211,238,0.1)';
+              }}>
+                Sign In
+              </Link>
             )}
           </div>
 

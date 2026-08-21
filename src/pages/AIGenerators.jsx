@@ -155,8 +155,14 @@ const AIGenerators = () => {
 
   const fetchPlan = async () => {
     try {
+      const token = localStorage.getItem('lb_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const apiBase = getApiBaseUrl();
       const response = await fetch(`${apiBase}/api/user/plan`, {
+        headers,
         credentials: 'include'
       });
       if (response.ok) {
@@ -220,16 +226,19 @@ const AIGenerators = () => {
     setIsTyping(true);
 
     try {
-      const apiBase = getApiBaseUrl();
-      
       const history = messages.map(m => ({
         role: m.role,
         content: m.text
       }));
-
+      const token = localStorage.getItem('lb_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const apiBase = getApiBaseUrl();
       const response = await fetch(`${apiBase}/api/chat-architect`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({
           message: currentMsg,
@@ -288,10 +297,15 @@ const AIGenerators = () => {
       if (!navigator.onLine) {
         throw new Error('OFFLINE');
       }
+      const token = localStorage.getItem('lb_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const apiBase = getApiBaseUrl();
       const response = await fetch(`${apiBase}/api/generate-blueprint`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({
           skills: skillsStr,

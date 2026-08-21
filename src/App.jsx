@@ -10,6 +10,8 @@ import GstCalculator from './pages/GstCalculator';
 import AdminPanel from './pages/AdminPanel';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
 import { useAuth } from './context/AuthContext';
 
 // ── Floating WhatsApp Button ─────────────────────────────────────────────────
@@ -178,9 +180,8 @@ function App() {
           <Route path="/profile"       element={<Profile />} />
           <Route path="/dashboard"     element={<Home />} />
 
-          {/* Legacy redirects */}
-          <Route path="/login"         element={<Home />} />
-          <Route path="/onboarding"    element={<Home />} />
+          <Route path="/login"         element={<Login />} />
+          <Route path="/onboarding"    element={<Onboarding />} />
 
           {/* 404 */}
           <Route path="*"              element={<NotFound />} />

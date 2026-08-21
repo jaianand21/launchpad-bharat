@@ -26,6 +26,7 @@ const WelcomeModal = ({ onComplete }) => {
     setLoading(true);
     const visitorData = { name: name.trim(), email: email.trim(), mobile: mobile.trim(), joinedAt: new Date().toISOString() };
 
+    let leadToken = null;
     try {
       const response = await fetch(`${getApiBaseUrl()}/api/leads`, {
         method: 'POST',
@@ -35,6 +36,11 @@ const WelcomeModal = ({ onComplete }) => {
 
       if (!response.ok) {
         throw new Error('Server returned an error. Please try again.');
+      }
+
+      const resData = await response.json();
+      if (resData.success && resData.token) {
+        leadToken = resData.token;
       }
 
       // Only save an indicator to localStorage to avoid PII exposure
@@ -48,7 +54,7 @@ const WelcomeModal = ({ onComplete }) => {
     }
 
     // Brief success state, then dismiss
-    setTimeout(() => onComplete(visitorData), 1200);
+    setTimeout(() => onComplete(visitorData, leadToken), 1200);
   };
 
   const inputStyle = {

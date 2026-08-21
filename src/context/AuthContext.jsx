@@ -16,14 +16,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const token = localStorage.getItem('lb_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
         const apiUrl = getApiBaseUrl();
         const res = await fetch(`${apiUrl}/api/auth/me`, {
+          headers,
           credentials: 'include'
         });
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
           setHasVisited(true);
+        } else {
+          if (token && res.status === 401) {
+            localStorage.removeItem('lb_token');
+          }
         }
       } catch (err) {
         console.error('[Auth] Session check failed:', err);
@@ -34,19 +44,32 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const saveVisitor = async (visitorData) => {
+  const saveVisitor = async (visitorData, leadToken) => {
     // Only store an indicator, no PII
     localStorage.setItem(STORAGE_KEY, 'true');
+    if (leadToken) {
+      localStorage.setItem('lb_token', leadToken);
+    }
     setHasVisited(true);
     
     // Sync join to live feed
     try {
       const apiUrl = getApiBaseUrl();
-      await fetch(`${apiUrl}/api/stats/join`, {
+      const response = await fetch(`${apiUrl}/api/stats/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(visitorData)
       });
+      if (response.ok && leadToken) {
+        // Fetch full user details now that we have auto-registered
+        const meRes = await fetch(`${apiUrl}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${leadToken}` }
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setUser(meData.user);
+        }
+      }
     } catch (err) {
       console.error('[Sync] Failed to record join:', err.message);
     }
@@ -54,6 +77,7 @@ export const AuthProvider = ({ children }) => {
 
   const clearVisitor = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('lb_token');
     setHasVisited(false);
     setUser(null);
   };
@@ -66,10 +90,15 @@ export const AuthProvider = ({ children }) => {
 
   const onboardUser = async (onboardingData) => {
     try {
+      const token = localStorage.getItem('lb_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/api/user/profile`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({
           ...onboardingData,
@@ -99,6 +128,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await response.json();
       if (data.success) {
+        if (data.token) localStorage.setItem('lb_token', data.token);
         setUser(data.user);
         setHasVisited(true);
         return { success: true, isNewUser: data.isNewUser };
@@ -121,6 +151,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await response.json();
       if (data.success) {
+        if (data.token) localStorage.setItem('lb_token', data.token);
         setUser(data.user);
         setHasVisited(true);
         return { success: true, isNewUser: data.isNewUser };
@@ -143,6 +174,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await response.json();
       if (data.success) {
+        if (data.token) localStorage.setItem('lb_token', data.token);
         setUser(data.user);
         setHasVisited(true);
         return { success: true, isNewUser: data.isNewUser };
